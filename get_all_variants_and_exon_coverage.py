@@ -228,37 +228,7 @@ def _collapse_all(locus):
     return collapsed_locus
 
 
-def _count_row_coverage(row, mtx, condition):
-    """Count periodic coverage for a genomic locus"""
-
-    exon_coverage = pd.DataFrame(columns=['orfBlockCoverage', 'source'])
-
-    dense = utils.to_dense(mtx, row.orf_num, float, length=row.orf_len)
-    if row.strand == '-':
-        dense = dense[::-1]
-
-    frames = []
-    for in_frame in range(3):
-        idx = [i for i in range(row.orf_len) if i % 3 != in_frame]
-        frames.append(dense.copy())
-        frames[in_frame][idx] = 0
-
-    block_sizes = np.array(row.blockSizes.split(","), dtype=int)
-    block_sizes = np.insert(block_sizes, 0, 0)
-    exon_blocks_loc = block_sizes.cumsum()
-
-    exon_block_frame_counts = []
-    for exon_block_start, exon_block_end in zip(exon_blocks_loc[:-1], exon_blocks_loc[1:]):
-        frame_counts = ':'.join(str(int(frame[exon_block_start:exon_block_end].sum())) for frame in frames)
-        exon_block_frame_counts.append(frame_counts)
-
-    exon_coverage.at[row.name, 'orfBlockCoverage'] = ';'.join(frame_counts for frame_counts in exon_block_frame_counts)
-    exon_coverage['source'] = condition
-
-    return exon_coverage
-
-
-def _count_exon_coverage_from_profiles(orfs, config, args):
+def _count_exon_coverage_from_profiles(orfs, config):
     """Count periodic coverage for each exon block"""
 
     is_unique = not ('keep_riboseq_multimappers' in config)
@@ -277,16 +247,33 @@ def _count_exon_coverage_from_profiles(orfs, config, args):
 
     mtx = scipy.io.mmread(mtx)
 
-    exon_coverage = parallel.apply_parallel(
-        orfs,
-        args.num_cpus,
-        _count_row_coverage,
-        mtx,
-        condition
-    )
-    exon_coverage_df = pd.concat(exon_coverage)
+    exon_coverage = pd.DataFrame(columns=['orfBlockCoverage', 'source'])
 
-    return exon_coverage_df
+    for row in orfs.itertuples():
+        dense = utils.to_dense(mtx, row.orf_num, float, length=row.orf_len)
+        if row.strand == '-':
+            dense = dense[::-1]
+
+        frames = []
+        for in_frame in range(3):
+            idx = [i for i in range(row.orf_len) if i % 3 != in_frame]
+            frames.append(dense.copy())
+            frames[in_frame][idx] = 0
+
+        block_sizes = np.array(row.blockSizes.split(","), dtype=int)
+        block_sizes = np.insert(block_sizes, 0, 0)
+        exon_blocks_loc = block_sizes.cumsum()
+
+        exon_block_frame_counts = []
+        for exon_block_start, exon_block_end in zip(exon_blocks_loc[:-1], exon_blocks_loc[1:]):
+            frame_counts = ':'.join(str(int(frame[exon_block_start:exon_block_end].sum())) for frame in frames)
+            exon_block_frame_counts.append(frame_counts)
+
+        exon_coverage.at[row.name, 'orfBlockCoverage'] = ';'.join(frame_counts for
+                                                                  frame_counts in exon_block_frame_counts)
+        exon_coverage['source'] = condition
+
+    return exon_coverage
 
 
 def _map_orfs_to_locus(loci, orfs):
@@ -539,14 +526,13 @@ def main():
         sources,
         args.num_cpus,
         _count_exon_coverage_from_profiles,
-        config,
-        args
+        config
         )
     exon_coverage_df = pd.concat(exon_coverage)
 
     exon_coverage_df.reset_index(inplace=True)
     exon_coverage_df.rename(columns={'index': 'name'}, inplace=True)
-    predicted_orfs_df = predicted_orfs_df.merge(exon_coverage_df, how='left', on=['name', 'source'])
+    predicted_orfs_df = predicted_orfs_df.merge(exon_coverage_df, how='outer', on=['name', 'source'])
 
 
     # then actually collapse all loci
