@@ -22,6 +22,7 @@ import btea.utils.cl_utils as clu
 
 logger = logging.getLogger(__name__)
 
+
 def get_lengths_and_offsets_call(sample_name, args):
 
     config = yaml.load(open(args.config))
@@ -51,7 +52,8 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('config', help="The yaml config file.")
-    parser.add_argument('out', help="The output.")
+    parser.add_argument('out', help='''The output file, overwritten by default.
+            If path to file does not exist, it will be created.''')
 
     parser.add_argument('--note', default=None)
 
@@ -62,6 +64,9 @@ def main():
 
     config = yaml.load(open(args.config))
 
+    msg = 'Parsing predictions for replicates.'
+    logger.info(msg)
+
     all_lengths_and_offsets = parallel.apply_iter_simple(
         config['riboseq_samples'].keys(),
         get_lengths_and_offsets_call,
@@ -70,17 +75,12 @@ def main():
 
     all_lengths_and_offsets_df = pd.concat(all_lengths_and_offsets)
 
-    msg = "Writing output to: {}".format(args.out, )
+    msg = "Writing output to: {}".format(args.out)
     logger.info(msg)
 
-    # make sure the path to the output exists
-    os.makedirs(args.out, exist_ok=True)
-    filename = "periodic-read-lengths-and-offsets.{}.tab".format(args.note)
-    output = os.path.join(args.out, filename)
-
-    header = ['{}'.format(c) for c in all_lengths_and_offsets_df.columns]
-    misc.pandas_utils.write_df(all_lengths_and_offsets_df, output, index=False, sep='\t',
-                               header=header, do_not_compress=True, quoting=csv.QUOTE_NONE)
+    misc.pandas_utils.write_df(all_lengths_and_offsets_df, args.out, create_path=True,
+                               index=False, sep='\t', header=True,
+                               do_not_compress=True, quoting=csv.QUOTE_NONE)
 
 
 if __name__ == '__main__':

@@ -85,16 +85,12 @@ def main():
                                      description="Parse predictions and create ORF types count table.")
 
     parser.add_argument('config', help="The (yaml) config file.")
-    parser.add_argument('out', help='''The output file (gz), overwritten by default.
+    parser.add_argument('out', help='''The output file, overwritten by default.
         If path to file does not exist, it will be created.''')
 
     parser.add_argument('--use-labels', help='''If this flag is present, then 
         group similar ORF types using label mappings defined in "ribo_utils".''',
                         action='store_true')
-    parser.add_argument('--use-conditions', help='''If this flag is present, then the 
-        count table includes results from the merged replicates in addition to those 
-        from each of the individual samples, else only results from single samples 
-        are used.''', action='store_true')
 
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
@@ -118,13 +114,13 @@ def main():
         args
         )
     sample_orf_types = utils.remove_nones(sample_orf_types)
-    
-    if args.use_conditions:
+
+    if 'riboseq_biological_replicates' in config:
         msg = 'Parsing predictions for conditions.'
         logger.info(msg)
         is_single_sample = False
         merged_sample_orf_types = parallel.apply_iter_simple(
-            ribo_utils.get_riboseq_replicates(config),
+            ribo_utils.get_riboseq_replicates(config).keys(),
             get_orf_type_counts,
             is_single_sample,
             condition_name_map,
@@ -141,7 +137,7 @@ def main():
 
     misc.pandas_utils.write_df(sample_orf_types_df, args.out, create_path=True,
                                index=False, sep='\t', header=True,
-                               do_not_compress=False, quoting=csv.QUOTE_NONE)
+                               do_not_compress=True, quoting=csv.QUOTE_NONE)
 
 
 if __name__ == '__main__':
