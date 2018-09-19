@@ -44,8 +44,7 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('config', help="The yaml config file.")
-    parser.add_argument('out', help='''The output file, overwritten by default.
-                If path to file does not exist, it will be created.''')
+    parser.add_argument('out', help='''The output file, overwritten by default.''')
 
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()

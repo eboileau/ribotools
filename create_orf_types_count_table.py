@@ -85,8 +85,7 @@ def main():
                                      description="Parse predictions and create ORF types count table.")
 
     parser.add_argument('config', help="The (yaml) config file.")
-    parser.add_argument('out', help='''The output file, overwritten by default.
-        If path to file does not exist, it will be created.''')
+    parser.add_argument('out', help='''The output file, overwritten by default.''')
 
     parser.add_argument('--use-labels', help='''If this flag is present, then 
         group similar ORF types using label mappings defined in "ribo_utils".''',

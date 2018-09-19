@@ -31,7 +31,6 @@ def get_lengths_and_offsets_call(sample_name, args):
     lengths, offsets = ribo_utils.get_periodic_lengths_and_offsets(
         config,
         sample_name,
-        isoform_strategy=args.isoform_strategy,
         is_unique=is_unique
     )
 
@@ -52,8 +51,7 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('config', help="The yaml config file.")
-    parser.add_argument('out', help='''The output file, overwritten by default.
-            If path to file does not exist, it will be created.''')
+    parser.add_argument('out', help='''The output file, overwritten by default.''')
 
     parser.add_argument('--note', default=None)
 

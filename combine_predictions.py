@@ -46,8 +46,11 @@ def get_predictions_file(name, is_sample, config):
         lengths, offsets = None, None
 
     predicted_orfs = filenames.get_riboseq_predicted_orfs(config['riboseq_data'], name,
-        length=lengths, offset=offsets, is_unique=is_unique, note=note_str, fraction=fraction,
-        reweighting_iterations=reweighting_iterations, is_filtered=True)
+                                                          length=lengths, offset=offsets,
+                                                          is_unique=is_unique, note=note_str,
+                                                          fraction=fraction,
+                                                          reweighting_iterations=reweighting_iterations,
+                                                          is_filtered=True)
 
     if not os.path.exists(predicted_orfs):
         msg = "Could not find predicted ORFs. name: {}. file: {}".format(name, predicted_orfs)
@@ -67,13 +70,14 @@ def add_data(name, sample_name_map, is_sample, config):
 
     return orfs
 
+
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="Parse predictions and create unique output table with selected fields.")
+                                     description='''Parse predictions and create unique output 
+                                     table with selected fields.''')
 
     parser.add_argument('config', help="The (yaml) config file.")
-    parser.add_argument('out', help="The BED12+ output file name (gz). If path does not "
-                                    "exist it will be created.")
+    parser.add_argument('out', help="The BED12+ output file name (gz).")
 
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
