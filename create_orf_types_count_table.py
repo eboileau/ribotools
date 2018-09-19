@@ -98,7 +98,7 @@ def main():
     config = yaml.load(open(args.config))
 
     sample_name_map = ribo_utils.get_sample_name_map(config)
-    condition_name_map = ribo_utils.get_condition_name_map(config)
+    condition_name_map = ribo_utils.get_riboseq_condition_name_map(config)
 
     msg = 'Parsing predictions for replicates.'
     logger.info(msg)
