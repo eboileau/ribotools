@@ -43,7 +43,7 @@ def get_lengths_and_offsets_call(sample_name, args):
 
     lengths = [int(l) for l in lengths]
     offsets = [int(o) for o in offsets]
-    data = {'name': sample_name_map[sample_name], 'lengths': [lengths], 'offsets': [offsets]}
+    data = {'name': sample_name_map[sample_name], 'lengths': lengths, 'offsets': offsets}
     return pd.DataFrame(data, columns=['name', 'lengths', 'offsets'])
 
 
