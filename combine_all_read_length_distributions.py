@@ -19,15 +19,16 @@ import misc.pandas_utils as pandas_utils
 import riboutils.ribo_utils as ribo_utils
 import riboutils.ribo_filenames as ribo_filenames
 
+import btea.utils.cl_utils as clu
 
 logger = logging.getLogger(__name__)
 
 
-def add_data(sample_name, config):
+def add_data(sample_name, config, args):
 
     note = config.get('note', None)
     read_length_distribution_file = ribo_filenames.get_riboseq_read_length_distribution(
-        config['riboseq_data'], sample_name, note=note)
+        config['riboseq_data'], sample_name, note=note, isoform_strategy=args.isoform_strategy)
     read_length_distribution = pd.read_csv(read_length_distribution_file)
     # keep only unique reads
     read_length_distribution = read_length_distribution[
@@ -46,6 +47,7 @@ def main():
     parser.add_argument('config', help="The yaml config file.")
     parser.add_argument('out', help='''The output file, overwritten by default.''')
 
+    clu.add_isoform_strategy(parser)
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
     logging_utils.update_logging(args)
@@ -60,7 +62,8 @@ def main():
     all_length_distributions = parallel.apply_iter_simple(
         config['riboseq_samples'].keys(),
         add_data,
-        config
+        config,
+        args
     )
 
     all_length_distributions_df = pd.concat(all_length_distributions).fillna(0)

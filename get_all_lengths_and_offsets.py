@@ -31,7 +31,8 @@ def get_lengths_and_offsets_call(sample_name, args):
     lengths, offsets = ribo_utils.get_periodic_lengths_and_offsets(
         config,
         sample_name,
-        is_unique=is_unique
+        is_unique=is_unique,
+        isoform_strategy=args.isoform_strategy
     )
 
     if len(lengths) == 0:
