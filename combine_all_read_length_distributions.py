@@ -27,8 +27,10 @@ logger = logging.getLogger(__name__)
 def add_data(sample_name, config, args):
 
     note = config.get('note', None)
+    is_unique = not ('keep_riboseq_multimappers' in config)
     read_length_distribution_file = ribo_filenames.get_riboseq_read_length_distribution(
-        config['riboseq_data'], sample_name, note=note, isoform_strategy=args.isoform_strategy)
+        config['riboseq_data'], sample_name, note=note, is_unique=is_unique, 
+        isoform_strategy=args.isoform_strategy)
     read_length_distribution = pd.read_csv(read_length_distribution_file)
     # keep only unique reads
     read_length_distribution = read_length_distribution[
