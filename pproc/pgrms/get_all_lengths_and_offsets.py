@@ -1,7 +1,10 @@
 #! /usr/bin/env python3
 
-"""Get all lengths/offsets for all ribo-seq samples
+"""Get all lengths/offsets for all Ribo-seq samples
 in the configuration file and output these to a dataframe.
+
+Functions:
+    get_lengths_and_offsets_call
 """
 
 import os
@@ -12,26 +15,28 @@ import csv
 
 import pandas as pd
 
-import misc.logging_utils as logging_utils
-import misc.parallel as parallel
-import misc.pandas_utils
+import pbio.misc.logging_utils as logging_utils
+import pbio.misc.parallel as parallel
+import pbio.misc.pandas_utils as pandas_utils
 
-import riboutils.ribo_utils as ribo_utils
+import pbio.ribo.ribo_utils as ribo_utils
 
 import btea.utils.cl_utils as clu
+
+from rpbp.defaults import metagene_options
 
 logger = logging.getLogger(__name__)
 
 
-def get_lengths_and_offsets_call(sample_name, args):
+def get_lengths_and_offsets_call(sample_name, config, args):
 
-    config = yaml.load(open(args.config))
     is_unique = not ('keep_riboseq_multimappers' in config)
 
     lengths, offsets = ribo_utils.get_periodic_lengths_and_offsets(
         config,
         sample_name,
         is_unique=is_unique,
+        default_params=metagene_options,
         isoform_strategy=args.isoform_strategy
     )
 
@@ -44,24 +49,26 @@ def get_lengths_and_offsets_call(sample_name, args):
 
     lengths = [int(l) for l in lengths]
     offsets = [int(o) for o in offsets]
-    data = {'name': sample_name_map[sample_name], 'lengths': lengths, 'offsets': offsets}
-    return pd.DataFrame(data, columns=['name', 'lengths', 'offsets'])
+    data = {'condition': sample_name_map[sample_name], 'lengths': lengths, 'offsets': offsets}
+
+    return pd.DataFrame(data, columns=['condition', 'lengths', 'offsets'])
 
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('config', help="The yaml config file.")
-    parser.add_argument('out', help='''The output file, overwritten by default.''')
 
-    parser.add_argument('--note', default=None)
+    parser.add_argument('out', help='''The (.csv.gz) output file complete path.''')
+
+    parser.add_argument('--overwrite', help='''Overwrites output.''', action='store_true')
 
     clu.add_isoform_strategy(parser)
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
     logging_utils.update_logging(args)
 
-    config = yaml.load(open(args.config))
+    config = yaml.load(open(args.config), Loader=yaml.FullLoader)
 
     msg = 'Parsing predictions for replicates.'
     logger.info(msg)
@@ -69,6 +76,7 @@ def main():
     all_lengths_and_offsets = parallel.apply_iter_simple(
         config['riboseq_samples'].keys(),
         get_lengths_and_offsets_call,
+        config,
         args
     )
 
@@ -77,9 +85,13 @@ def main():
     msg = "Writing output to: {}".format(args.out)
     logger.info(msg)
 
-    misc.pandas_utils.write_df(all_lengths_and_offsets_df, args.out, create_path=True,
-                               index=False, sep='\t', header=True,
-                               do_not_compress=True, quoting=csv.QUOTE_NONE)
+    if os.path.exists(args.out) and not args.overwrite:
+        msg = "Output file {} already exists. Skipping.".format(args.out)
+        logger.warning(msg)
+    else:
+        pandas_utils.write_df(all_lengths_and_offsets_df, args.out, create_path=True,
+                              index=False, sep=',', header=True,
+                              do_not_compress=False, quoting=csv.QUOTE_NONE)
 
 
 if __name__ == '__main__':
