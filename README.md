@@ -84,3 +84,5 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Authors
 
+Some scripts are adapted from the `Rp-Bp` and/or `B-tea` pipeline, authored by Brandon Malone.
+
