@@ -1,111 +1,112 @@
 #! /usr/bin/env python3
 
 """Call htseq-count on a list of samples
+
+Functions:
+    get_count_table
 """
 
 import sys
+import os
 import argparse
 import logging
 import yaml
+import shlex
 
 import pbio.misc.logging_utils as logging_utils
 import pbio.misc.shell_utils as shell_utils
 import pbio.misc.utils as utils
 import pbio.misc.slurm as slurm
 
+import pbio.utils.pgrm_utils as pgrm_utils
+
 import pbio.ribo.ribo_filenames as filenames
 import pbio.ribo.ribo_utils as ribo_utils
 
+import pproc.utils.cl_utils as clu
+
+from pproc.defaults import default_num_cpus, default_mem, htseq_options, \
+    htseq_executable, metagene_options
 
 logger = logging.getLogger(__name__)
 
-stringtie_executable = 'stringtie'
 
+def get_count_table(seq_base, name, length=None, is_unique=False, note=None):
 
+    unique_str = filenames.get_unique_string(is_unique)
+    length_str = filenames.get_length_string(length)
+    note_str = filenames.get_note_string(note)
 
-# now if calling run-all then how we can pass the strandedeness???
-# to collect all files, we need to know if unique, then if filtered by lenth
-# for both Ribo and RNA independently
-# then we need to add all files into the command, and also list the sample
-# names (with dict nice) in a separate file
+    fn = ''.join([name, note_str, unique_str, length_str, '.tsv'])
 
-# BETTER, WORK WITH DOWNSREAM DESEQ2, WHICH CAN USE OUTPUT FROM HTSEQ COUNT
-# SO IN FACT IN THE PIPLEINE, WE CALL FOR EACH SAMPLE, WHEN READY
-# NEED TO PRIVUDE OUTPUT DIR OR ADD TO FILKENAMES
-# PASS NAME, CONFIG, HTSEQ ARGS,
-
-# PASS skip_periodicity_estimation OR SIMILAR
-# AND trim_rna_to_max_fragment_size
-
-# MAYBE ADD STRANDEDNESS AS OPTION, AND SORT HOW TO IF RUN-ALL
-# THEN ADD TO DEFAULTS BEFORE CONSTRUCTING STRING AND PASS,...
-# SO HERE JUST HTSEQ-OPTIONS, AND GET FINAL OPTIONS PGRMS
+    return os.path.join(seq_base, 'count-tables', fn)
 
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="""Call Stringtie and extract read counts [-e], require [-G]. With 
-        this option, reads with no reference are skipped. Also use [-C].""")
+                                     description="""Call htseq-count and extract read counts.""")
 
     parser.add_argument('seq', choices=['rna', 'ribo'])
-    parser.add_argument('config', help="The yaml config file.")
-    parser.add_argument('name', help="The name of the dataset.")
-    parser.add_argument('gtf', help="Stringtie output GTF file")
 
-    parser.add_argument('--strandedness', help="""Library strandedness. If unstranded,
-            the "XS" BAM tag must be included to indicate the genomic strand. No check
-            will be performed.""")
+    parser.add_argument('config', help="The yaml config file.")
+
+    parser.add_argument('name', help="The name of the dataset.")
 
     parser.add_argument('--not-periodic', help="""Flag: non-periodic read 
             lengths are NOT filtered out; this is to get the right file names 
-            (length-). For ribo only.""", action='store_true')
+            (length-). For Ribo-seq only.""", action='store_true')
 
-    parser.add_argument('--ribo-config', help="""Optional argument: the Ribo config file
-            when seq is rna and rna reads have been trimmed to max ribo fragment lengths.
-            If reads are trimmed then this needs to be given, otherwise the program will
-            not find the alignment files. In addition, the rna config file must include 
-            "matching_samples".""", type=str)
+    parser.add_argument('--ribo-config', help="""Optional argument: the Ribo-seq config file
+            when seq is RNA and RNA reads have been trimmed to max fragment size from 
+            the matching Ribo-seq sample. In addition, the RNA config file must include 
+            "matching_samples". If not given, then the 'normal' RNA alignment files will
+            be used.""", type=str, default=None)
 
     clu.add_file_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     logging_utils.add_logging_options(parser)
-    pgrm_utils.add_star_options(parser, star_executable)
-    pgrm_utils.add_flexbar_options(parser)
     clu.add_htseq_options(parser)
     args = parser.parse_args()
     logging_utils.update_logging(args)
 
-
-    args = parser.parse_args()
-    logging_utils.update_logging(args)
+    msg = "[call-htseq-count]: {}".format(' '.join(sys.argv))
+    logger.info(msg)
 
     # if using slurm, submit the script
-    cmd = ' '.join(sys.argv)
     if args.use_slurm:
+        cmd = "{}".format(' '.join(shlex.quote(s) for s in sys.argv))
         slurm.check_sbatch(cmd, args=args)
         return
-    logger.info(cmd)
+
+    # check that all of the necessary programs are callable
+    programs = [htseq_executable]
+    shell_utils.check_programs_exist(programs)
+
+    if ((args.seq.lower() == 'ribo' and args.ribo_config) or
+            (args.seq.lower() == 'rna' and args.not_periodic)):
+        msg = """seq is Ribo and [--ribo-config] was passed or seq is 
+            RNA and [--not-periodic] was passed. These options will
+            be ignored."""
+        logger.warning(msg)
 
     call = not args.do_not_call
     keep_delete_files = args.keep_intermediate_files or args.do_not_call
 
-    config = yaml.load(open(args.config))
+    config = yaml.load(open(args.config), Loader=yaml.FullLoader)
+    sample_name_map = ribo_utils.get_sample_name_map(config)
     note = config.get('note', None)
+
     keep_key = 'keep_' + str(args.seq) + 'seq_multimappers'
     data_key = str(args.seq) + 'seq_data'
     is_unique = not (keep_key in config)
 
-    strandedness = ''
-    if args.strandedness != 'un':
-        strandedness = '--{}'.format(args.strandedness)
+    if args.seq.lower() == 'ribo' and not args.not_periodic:
 
-    if args.seq == 'ribo' and not args.not_periodic:
-        # get the lengths, we do not use the offsets
         lengths, _ = ribo_utils.get_periodic_lengths_and_offsets(
             config,
             args.name,
-            isoform_strategy=args.isoform_strategy,
-            is_unique=is_unique
+            is_unique=is_unique,
+            default_params=metagene_options
         )
 
         if len(lengths) == 0:
@@ -113,24 +114,25 @@ def main():
             logger.critical(msg)
             return
 
-    elif args.seq == 'rna' and args.ribo_config:
+    elif args.seq.lower() == 'rna' and args.ribo_config:
+
         config_keys = ['matching_samples']
         utils.check_keys_exist(config, config_keys)
         matching_ribo_sample = config['matching_samples'][args.name]
 
-        ribo_config = yaml.load(open(args.ribo_config))
+        ribo_config = yaml.load(open(args.ribo_config), Loader=yaml.FullLoader)
         is_unique_ribo = not ('keep_riboseq_multimappers' in ribo_config)
 
-        # get the lengths, we don't need the offsets
         lengths, _ = ribo_utils.get_periodic_lengths_and_offsets(
             ribo_config,
             matching_ribo_sample,
             is_unique=is_unique_ribo,
-            isoform_strategy=args.isoform_strategy
+            default_params=metagene_options
         )
 
         if len(lengths) == 0:
-            msg = "No periodic read lengths and offsets were found!"
+            msg = """No periodic read lengths and offsets were found!, but the
+                                [--ribo-config] option was given!"""
             logger.critical(msg)
             return
 
@@ -139,31 +141,33 @@ def main():
     else:
         lengths = None
 
-    bam = filenames.get_seq_bam(
+    bam_file = filenames.get_seq_bam(
         args.seq,
         config[data_key],
         args.name,
         is_unique=is_unique,
         length=lengths,
-        isoform_strategy=args.isoform_strategy,
-        stranded=args.strandedness,
         note=note
     )
 
-    # default to stringtie output location of gtf
-    cov_ref = args.gtf.split('gtf')[0] + 'cov_refs.gtf'
+    count_file = get_count_table(config[data_key],
+                                 sample_name_map[args.name],
+                                 is_unique=is_unique,
+                                 length=lengths,
+                                 note=note)
 
-    cmd = "{} -e {} -p {} -G {} -C {} -o {} {}".format(
-        stringtie_executable,
-        strandedness,
-        args.num_cpus,
+    # all options to htseq-count
+    htseq_options_str = pgrm_utils.get_final_args(htseq_options, args.htseq_options)
+
+    cmd = "{} {} {} {} > {}".format(
+        htseq_executable,
+        htseq_options_str,
+        bam_file,
         config['gtf'],
-        cov_ref,
-        args.gtf,
-        bam)
+        count_file)
 
-    in_files = [config['gtf'], bam]
-    out_files = [args.gtf, cov_ref]
+    in_files = [bam_file, config['gtf']]
+    out_files = [count_file]
     shell_utils.call_if_not_exists(cmd, out_files, in_files=in_files,
                                    overwrite=args.overwrite, call=call,
                                    keep_delete_files=keep_delete_files)

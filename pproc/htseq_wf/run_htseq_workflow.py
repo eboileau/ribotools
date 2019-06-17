@@ -39,6 +39,7 @@ import argparse
 import logging
 import yaml
 import shlex
+import re
 
 import pbio.misc.logging_utils as logging_utils
 import pbio.misc.shell_utils as shell_utils
@@ -47,12 +48,10 @@ import pbio.misc.slurm as slurm
 
 import pbio.utils.pgrm_utils as pgrm_utils
 
-import pbio.ribo.ribo_filenames as filenames
-import pbio.ribo.ribo_utils as ribo_utils
-
 import pproc.utils.cl_utils as clu
 
-from pproc.defaults import default_num_cpus, default_mem, star_executable
+from pproc.defaults import default_num_cpus, default_mem, star_executable, \
+    htseq_options
 
 logger = logging.getLogger(__name__)
 
@@ -67,24 +66,30 @@ def main():
 
     parser.add_argument('config', help="The yaml configuration file.")
 
-    parser.add_argument('-skip', '--skip-periodicity-estimation', help="""Flag: by default, 
+    parser.add_argument('--skip-periodicity-estimation', help="""Flag: by default, 
         estimate periodicity and filter non-periodic read lengths from the final alignment 
         files. If this flag is passed, then only mapping is performed. For Ribo-seq only.""",
                         action='store_true')
 
     parser.add_argument('--run-all', help="""Flag: map and count Ribo-seq and RNA-seq, one
-        after the other, provided that ALL Ribo-seq jobs completed successfully.""",
-                        action='store_true')
+        after the other, provided that ALL Ribo-seq jobs completed successfully.
+        For Ribo-seq only.""", action='store_true', required='--stranded' in sys.argv)
+
+    parser.add_argument('--stranded', help="""Optional argument: library strandedness
+        for RNA-seq when using [--run-all]. This option is passed to htseq-count and 
+        overrides the same option passed via [--htseq-options] and used for Ribo-seq. 
+        Unless given, the default value will be used.""", choices=['yes', 'reverse', 'no'],
+                        default='no')
 
     parser.add_argument('--trim-rna-to-max-fragment-size', help="""Flag: trim RNA post 
         adapter removal using max fragment size from the matching Ribo-seq sample. Note* At least
         the "periodic-offsets" file must be available. The config file must also include 
         "matching_samples" and the path to the Ribo-seq config must be given [--ribo-config])""",
-        action='store_true')
+                        action='store_true')
 
     parser.add_argument('--ribo-config', help="""Optional argument: the Ribo-seq config file
         if using [--trim-rna-to-max-fragment-size].""",
-        required='--trim-rna-to-max-fragment-size' in sys.argv, type=str)
+                        required='--trim-rna-to-max-fragment-size' in sys.argv, type=str)
 
     clu.add_file_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
@@ -123,6 +128,11 @@ def main():
         do_not_call_str = "--do-not-call"
     args.do_not_call = False
 
+    if args.seq.lower() == 'rna' and (args.skip_periodicity_estimation or args.run_all):
+        msg = """seq is RNA and either [--skip-periodicity-estimation] or [--run-all]
+            were given. These options will be ignored."""
+        logger.warning(msg)
+
     config = yaml.load(open(args.config), Loader=yaml.FullLoader)
     base_keys = ['ribosomal_index',
                  'star_index',
@@ -134,7 +144,7 @@ def main():
     all_ribo_jobs = None
 
     # now process samples
-    if args.seq == 'ribo':
+    if args.seq.lower() == 'ribo':
 
         config_keys = base_keys + ['riboseq_data', 'riboseq_samples']
         utils.check_keys_exist(config, config_keys)
@@ -164,9 +174,12 @@ def main():
             job_id = slurm.check_sbatch(cmd, args=args)
             job_ids_mapping[sample_name] = job_id
 
-        job_ids_periodic = []
+        job_ids_periodic = {}
+        not_periodic_str = '--not-periodic'
+
         if not args.skip_periodicity_estimation:
 
+            not_periodic_str = ''
             filter_non_periodic_str = '--filter-non-periodic'
 
             for sample_name in config['riboseq_samples'].keys():
@@ -182,21 +195,46 @@ def main():
 
                 job_id = [job_ids_mapping[sample_name]]
                 job_id_periodic = slurm.check_sbatch(cmd, args=args, dependencies=job_id)
-                job_ids_periodic.append(job_id_periodic)
+                job_ids_periodic[sample_name] = job_id_periodic
 
-        # collect all jobs and submit to htseq-count
-        all_ribo_jobs = list(job_ids_mapping.values())
-        all_ribo_jobs.extend(job_ids_periodic)
+        # run htseq-count
+        for sample_name in config['riboseq_samples'].keys():
 
-        cdm = "".format()
+            cmd = "call-htseq-count {} {} {} {} {} {} {} {}".format(
+                args.seq,
+                config,
+                sample_name,
+                logging_str,
+                file_str,
+                slurm_str,
+                htseq_str,
+                not_periodic_str)
 
-        slurm.check_sbatch(cmd, args=args, dependencies=all_ribo_jobs)
+            job_id = job_ids_periodic[sample_name] if job_ids_periodic.get(sample_name, None) \
+                else job_ids_mapping[sample_name]
+            slurm.check_sbatch(cmd, args=args, dependencies=job_id)
 
-        # we are done with ribo, however if we run all, we need to continue
+        # we are done with ribo, however if we run all,
+        # we need to collect all jobs and check htseq-options for stranded
         if args.run_all:
+
+            all_ribo_jobs = list(job_ids_mapping.values())
+            all_ribo_jobs.extend(list(job_ids_periodic.values()))
+
+            if args.htseq_options is not None:
+                # replace option used for ribo
+                args.htseq_options = [opt if '--stranded' not in opt
+                                      else re.sub('yes|no|reverse', args.stranded, opt)
+                                      for opt in args.htseq_options]
+            else:
+                # use default if no arguments are passed
+                args.htseq_options = ["--stranded {}".format(args.stranded)]
+
+            htseq_str = clu.get_htseq_options_string(args)
+
             args.seq = 'rna'
 
-    if args.seq == 'rna':
+    if args.seq.lower() == 'rna':
 
         config_keys = base_keys + ['rnaseq_data', 'rnaseq_samples']
 
@@ -209,7 +247,7 @@ def main():
 
             if '--post-trim-length' in flexbar_str:
                 msg = ("Flexbar option [--post-trim-length] already given..."
-                   "will ignore [trim-rna-to-max-fragment-size].")
+                       "will ignore [trim-rna-to-max-fragment-size].")
                 logger.critical(msg)
             else:
                 trim_str = '--trim-rna-to-max-fragment-size'
@@ -222,7 +260,7 @@ def main():
 
         utils.check_keys_exist(config, config_keys)
 
-        all_rna_jobs = []
+        job_ids_mapping = {}
         for sample_name, data in config['rnaseq_samples'].items():
 
             if args.tmp is not None:
@@ -245,13 +283,23 @@ def main():
                                        ribo_cfg_str)
 
             job_id = slurm.check_sbatch(cmd, args=args, dependencies=all_ribo_jobs)
-            all_rna_jobs.append(job_id)
+            job_ids_mapping[sample_name] = job_id
 
-        # collect all jobs and submit to htseq-count
+        # run htseq-count
+        for sample_name in config['rnaseq_samples'].keys():
 
-        cdm = "".format()
+            cmd = "call-htseq-count {} {} {} {} {} {} {} {}".format(
+                args.seq,
+                config,
+                sample_name,
+                logging_str,
+                file_str,
+                slurm_str,
+                htseq_str,
+                ribo_cfg_str)
 
-        slurm.check_sbatch(cmd, args=args, dependencies=all_rna_jobs)
+            job_id = job_ids_mapping[sample_name]
+            slurm.check_sbatch(cmd, args=args, dependencies=job_id)
 
 
 if __name__ == '__main__':
