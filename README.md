@@ -38,7 +38,7 @@ source /path/to/virtual/environment/bin/activate
 pip install --upgrade pip setuptools wheel
 
 # Clone the git repository
-git clone https://github.com/dieterich-lab/pybio-utils.git
+git clone https://github.com/eboileau/pyproc-utils
 cd pyproc-utils
 
 # The period is required, it is the local project path (pybio-utils)
@@ -58,7 +58,7 @@ conda create -n my_new_environment python=3.6 anaconda
 source activate my_new_environment
 
 # Clone the git repository
-git clone https://github.com/dieterich-lab/pybio-utils.git
+git clone https://github.com/eboileau/pyproc-utils
 cd pyproc-utils
 
 pip --verbose install -r requirements.txt [-e] . 2>&1 | tee install.log

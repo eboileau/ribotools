@@ -5,4 +5,4 @@
 # Pin version of the pbio package and related dependencies:
 git+https://github.com/dieterich-lab/pybio-utils.git@dev#egg=pbio
 # Pin version of the rpbp package and related dependencies:
-git+https://github.com/dieterich-lab/rp-bp.git@dev#egg=pbio
+git+https://github.com/dieterich-lab/rp-bp.git@dev#egg=rpbp

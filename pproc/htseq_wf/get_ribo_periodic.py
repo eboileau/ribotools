@@ -25,17 +25,17 @@ import logging
 import yaml
 import shlex
 
-import misc.logging_utils as logging_utils
-import misc.shell_utils as shell_utils
-import misc.utils as utils
-import misc.slurm as slurm
+import pbio.misc.logging_utils as logging_utils
+import pbio.misc.shell_utils as shell_utils
+import pbio.misc.utils as utils
+import pbio.misc.slurm as slurm
 
-import bio_utils.bam_utils as bam_utils
+import pbio.utils.bam_utils as bam_utils
 
-import riboutils.ribo_filenames as filenames
-import riboutils.ribo_utils as ribo_utils
+import pbio.ribo.ribo_filenames as filenames
+import pbio.ribo.ribo_utils as ribo_utils
 
-import btea.utils.cl_utils as clu
+import pproc.utils.cl_utils as clu
 
 from pproc.defaults import default_num_cpus, default_mem, metagene_options
 

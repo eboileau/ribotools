@@ -72,7 +72,8 @@ def main():
                         action='store_true')
 
     parser.add_argument('--run-all', help="""Flag: map and count Ribo-seq and RNA-seq, one
-        after the other, provided that ALL Ribo-seq jobs completed successfully.
+        after the other, provided that ALL Ribo-seq jobs completed successfully. The same
+        general options are used, including options used for Flexbar, STAR and Bowtie2.
         For Ribo-seq only.""", action='store_true', required='--stranded' in sys.argv)
 
     parser.add_argument('--stranded', help="""Optional argument: library strandedness
@@ -91,6 +92,9 @@ def main():
         if using [--trim-rna-to-max-fragment-size].""",
                         required='--trim-rna-to-max-fragment-size' in sys.argv, type=str)
 
+    parser.add_argument('--rna-config', help="""Optional argument: the RNA-seq config file
+            if using [--run-all].""", required='--run-all' in sys.argv, type=str)
+
     clu.add_file_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     logging_utils.add_logging_options(parser)
@@ -106,9 +110,10 @@ def main():
         'bowtie2',
         args.star_executable,
         'samtools',
-        'htseq-workflow',
+        'alignment-workflow',
         'get-ribo-periodic',
-        'keep-ribo-periodic'
+        'keep-ribo-periodic',
+        'call-htseq-count'
     ]
     shell_utils.check_programs_exist(programs)
 
@@ -131,6 +136,11 @@ def main():
     if args.seq.lower() == 'rna' and (args.skip_periodicity_estimation or args.run_all):
         msg = """seq is RNA and either [--skip-periodicity-estimation] or [--run-all]
             were given. These options will be ignored."""
+        logger.warning(msg)
+
+    if not args.run_all and args.rna_config:
+        msg = """The [--rna-config] option is passed without
+        [--run-all], it will be ignored."""
         logger.warning(msg)
 
     config = yaml.load(open(args.config), Loader=yaml.FullLoader)
@@ -202,7 +212,7 @@ def main():
 
             cmd = "call-htseq-count {} {} {} {} {} {} {} {}".format(
                 args.seq,
-                config,
+                args.config,
                 sample_name,
                 logging_str,
                 file_str,
@@ -232,6 +242,10 @@ def main():
 
             htseq_str = clu.get_htseq_options_string(args)
 
+            # and pass the right config file
+            args.config = args.rna_config
+            config = yaml.load(open(args.config), Loader=yaml.FullLoader)
+
             args.seq = 'rna'
 
     if args.seq.lower() == 'rna':
@@ -255,7 +269,7 @@ def main():
 
         if not args.trim_rna_to_max_fragment_size and args.ribo_config:
             msg = """The [--ribo-config] option is passed without
-            [trim-rna-to-max-fragment-size], it will be ignored."""
+            [--trim-rna-to-max-fragment-size], it will be ignored."""
             logger.warning(msg)
 
         utils.check_keys_exist(config, config_keys)
@@ -290,7 +304,7 @@ def main():
 
             cmd = "call-htseq-count {} {} {} {} {} {} {} {}".format(
                 args.seq,
-                config,
+                args.config,
                 sample_name,
                 logging_str,
                 file_str,

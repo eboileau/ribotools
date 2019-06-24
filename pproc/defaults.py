@@ -71,17 +71,16 @@ flexbar_options = {
     'zip-output': 'GZ'
 }
 
-# htseq-count options must be passed via the [htseq-options]
+# htseq-count options must be passed via the [--htseq-options]
 
-# [--strandedness] whether the RNA-seq data is from a strand-specific assay
-# and [--run-all] is passed, must
+# In addition, when passing [--run-all], use [--stranded] to override
+# default htseq_options
 
-# strandedness option must be passed as argument when calling the pipeline,
-# otherwise default is unstranded.
 # stranded=yes: read has to be mapped to the same strand as the feature (single-end) or fr or second strand
 # stranded=reverse: read has to be mapped to the opposite strand as the feature (single-end) or rf or first strand
 
-# all other htseq-count options must be passed via the [htseq-options]
+# Because the [--additional-attr] must be repeated for each attribute, we cannot currently use a list
+# of default attributes. Use e.g. --htseq-options "--additional-attr gene_name --additional-attr transcript_id"
 
 htseq_executable = 'htseq-count'
 htseq_options = {
@@ -89,7 +88,7 @@ htseq_options = {
     'stranded': 'no',
     'type': 'CDS',  # feature must be 3rd field of GTF file
     'idattr': 'gene_id',
-    'additional-attr': ['gene_name', 'transcript_id'],
+    'additional-attr': 'gene_name',
     'mode': 'intersection-nonempty',
     'secondary-alignments': 'ignore',
     'supplementary-alignments': 'ignore'
