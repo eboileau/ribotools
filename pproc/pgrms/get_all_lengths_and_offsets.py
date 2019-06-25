@@ -21,8 +21,6 @@ import pbio.misc.pandas_utils as pandas_utils
 
 import pbio.ribo.ribo_utils as ribo_utils
 
-import btea.utils.cl_utils as clu
-
 from rpbp.defaults import metagene_options
 
 logger = logging.getLogger(__name__)
@@ -36,8 +34,7 @@ def get_lengths_and_offsets_call(sample_name, config, args):
         config,
         sample_name,
         is_unique=is_unique,
-        default_params=metagene_options,
-        isoform_strategy=args.isoform_strategy
+        default_params=metagene_options
     )
 
     if len(lengths) == 0:
@@ -63,7 +60,6 @@ def main():
 
     parser.add_argument('--overwrite', help='''Overwrites output.''', action='store_true')
 
-    clu.add_isoform_strategy(parser)
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
     logging_utils.update_logging(args)

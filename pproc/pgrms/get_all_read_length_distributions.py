@@ -4,9 +4,7 @@
 into a large table (unique counts only). If the files are not already available,
 then they are created.
 
-Note* The isoform strategy option will be removed.
-
-      Does not consider the filtered Ribo-seq BAM files with
+Note* Does not consider the filtered Ribo-seq BAM files with
       periodic fragment lengths (i.e. uses all fragments,
       they can easily be filtered afterwards); however, for RNA-seq, if
       mapping was done on trimmed reads, additional arguments must be
@@ -34,8 +32,6 @@ import pbio.misc.shell_utils as shell_utils
 import pbio.ribo.ribo_utils as ribo_utils
 import pbio.ribo.ribo_filenames as filenames
 
-import btea.utils.cl_utils as clu
-
 from rpbp.defaults import metagene_options
 
 logger = logging.getLogger(__name__)
@@ -55,8 +51,7 @@ def add_data(sample_name, get_length_distribution, data, note, args):
 
     read_length_distribution_file = get_length_distribution(data,
                                                             sample_name,
-                                                            note=note,
-                                                            isoform_strategy=args.isoform_strategy)
+                                                            note=note)
 
     read_length_distribution = pd.read_csv(read_length_distribution_file)
 
@@ -87,7 +82,6 @@ def main():
         the alignment files. In addition, the rna config file must include 'matching_samples'.""",
                         type=str)
 
-    clu.add_isoform_strategy(parser)
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
     logging_utils.update_logging(args)
@@ -117,8 +111,7 @@ def main():
 
         read_length_distribution = get_length_distribution(config[data_key],
                                                            replicate,
-                                                           note=note,
-                                                           isoform_strategy=args.isoform_strategy)
+                                                           note=note)
 
         ret = utils.check_files_exist([read_length_distribution], raise_on_error=False)
         if ret:
@@ -136,8 +129,7 @@ def main():
             lengths, _ = ribo_utils.get_periodic_lengths_and_offsets(ribo_config,
                                                                      matching_ribo_sample,
                                                                      is_unique=is_unique_ribo,
-                                                                     default_params=metagene_options,
-                                                                     isoform_strategy=args.isoform_strategy)
+                                                                     default_params=metagene_options)
 
             if len(lengths) == 0:
                 msg = "No periodic read lengths and offsets were found!"
@@ -153,7 +145,6 @@ def main():
                              replicate,
                              is_unique=False,
                              length=lengths,
-                             isoform_strategy=args.isoform_strategy,
                              note=note)
 
         if is_unique:
@@ -162,7 +153,6 @@ def main():
                                  replicate,
                                  is_unique=is_unique,
                                  length=lengths,
-                                 isoform_strategy=args.isoform_strategy,
                                  note=note)
 
             in_files = [genome_bam, unique_bam]
@@ -202,9 +192,6 @@ def main():
     all_length_distributions_df['name'] = all_length_distributions_df.index
 
     # adjust the names
-    if args.isoform_strategy is not None:
-        repl = '.{}'.format(args.isoform_strategy)
-        all_length_distributions_df['name'] = all_length_distributions_df['name'].str.replace(repl, '')
     if args.seq == 'rna' and args.ribo_config:
         repl = re.compile('.length-\d{2}')
         all_length_distributions_df['name'] = all_length_distributions_df['name'].str.replace(repl, '')

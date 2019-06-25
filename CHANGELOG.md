@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Removed
+- Isoform strategy (Fix reference to `btea`).
+
 
 ## [0.1.0]
 

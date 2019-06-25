@@ -7,8 +7,6 @@ predicted ORFs. If only the counts for the predicted ORFs
 are needed, they can easily be obtained from the frame counts
 in the prediction files.
 
-Note* The isoform strategy option will be removed.
-
 Functions:
     get_profile
     get_counts
@@ -29,8 +27,6 @@ import pbio.misc.logging_utils as logging_utils
 import pbio.misc.parallel as parallel
 import pbio.misc.pandas_utils as pandas_utils
 
-import btea.utils.cl_utils as clu
-
 from rpbp.defaults import metagene_options
 
 logger = logging.getLogger(__name__)
@@ -47,7 +43,6 @@ def get_profile(sample_name, config, args):
 
     lengths, offsets = ribo_utils.get_periodic_lengths_and_offsets(config,
                                                                    sample_name,
-                                                                   isoform_strategy=args.isoform_strategy,
                                                                    default_params=metagene_options,
                                                                    is_unique=is_unique)
 
@@ -63,7 +58,6 @@ def get_profile(sample_name, config, args):
                                               length=lengths,
                                               offset=offsets,
                                               is_unique=is_unique,
-                                              isoform_strategy=args.isoform_strategy,
                                               note=note_str)
 
     return profiles
@@ -114,7 +108,6 @@ def main():
 
     parser.add_argument('--overwrite', action='store_true')
 
-    clu.add_isoform_strategy(parser)
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
     logging_utils.update_logging(args)
