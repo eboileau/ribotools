@@ -220,8 +220,8 @@ def main():
                 htseq_str,
                 not_periodic_str)
 
-            job_id = job_ids_periodic[sample_name] if job_ids_periodic.get(sample_name, None) \
-                else job_ids_mapping[sample_name]
+            job_id = [job_ids_periodic[sample_name] if job_ids_periodic.get(sample_name, None) \
+                else job_ids_mapping[sample_name]]
             slurm.check_sbatch(cmd, args=args, dependencies=job_id)
 
         # we are done with ribo, however if we run all,
@@ -312,7 +312,7 @@ def main():
                 htseq_str,
                 ribo_cfg_str)
 
-            job_id = job_ids_mapping[sample_name]
+            job_id = [job_ids_mapping[sample_name]]
             slurm.check_sbatch(cmd, args=args, dependencies=job_id)
 
 
