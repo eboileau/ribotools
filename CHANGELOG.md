@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Removed
 - Isoform strategy (Fix reference to `btea`).
 
+### Added
+- `create_bigBed_tracks.py` to pgrms
+- MANIFEST.in and scripts
 
 ## [0.1.0]
 
