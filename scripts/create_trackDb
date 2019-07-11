@@ -58,9 +58,9 @@ for f in ${DIRLOC}/*.bb; do
  echo "bigDataUrl ${base}"
  echo "shortLabel ${name}"
  if [ -z "$USED" ]; then
-  echo "longLabel ${NAME_DICT[$name]}, ${LONGLABEL}"
- else
   echo "longLabel ${name}, ${LONGLABEL}"
+ else
+  echo "longLabel ${NAME_DICT[$name]}, ${LONGLABEL}"
  fi
  echo "type ${ftype}"
  if  [ ${html} == "on" ]; then
