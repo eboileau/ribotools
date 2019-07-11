@@ -80,7 +80,7 @@ def _get_bed(input_filename, pretty_name, fields_to_keep, args):
     remove_m = bed_df['orf_type'].isna()
     if not args.keep_other:
         other_m = bed_df['orf_category'] == 'Other'
-        remove_m = remove_m & other_m
+        remove_m = remove_m | other_m
     bed_df = bed_df[~remove_m]
 
     msg = "No. of unique ORFs (after filtering): {}".format(len(bed_df['id'].unique()))

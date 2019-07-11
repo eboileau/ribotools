@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - `create_bigBed_tracks.py` to pgrms
-- MANIFEST.in and scripts
+- MANIFEST.in, scripts (`create_trackDb`) and data (`fields.txt`)
 
 ## [0.1.0]
 
