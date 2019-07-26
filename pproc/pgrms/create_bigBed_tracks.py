@@ -72,24 +72,27 @@ def _get_bed(input_filename, pretty_name, fields_to_keep, args):
     msg = "No. of unique ORFs: {}".format(len(bed_df['id'].unique()))
     logger.info(msg)
 
-    # add display label
-    for orf_type, labels in ribo_utils.orf_type_labels_mapping.items():
-        bed_df.loc[bed_df['orf_type'].isin(labels), 'orf_category'] = display_name_map[orf_type]
+    # add display label, if orf_type is found, make sure orf_category is also in fields
+    if 'orf_type' in fields_to_keep:
+        for orf_type, labels in ribo_utils.orf_type_labels_mapping.items():
+            bed_df.loc[bed_df['orf_type'].isin(labels), 'orf_category'] = display_name_map[orf_type]
 
-    # just to make sure...
-    remove_m = bed_df['orf_type'].isna()
-    if not args.keep_other:
-        other_m = bed_df['orf_category'] == 'Other'
-        remove_m = remove_m | other_m
-    bed_df = bed_df[~remove_m]
+        # just to make sure...
+        remove_m = bed_df['orf_type'].isna()
+        if not args.keep_other:
+            other_m = bed_df['orf_category'] == 'Other'
+            remove_m = remove_m | other_m
+        bed_df = bed_df[~remove_m]
 
-    msg = "No. of unique ORFs (after filtering): {}".format(len(bed_df['id'].unique()))
-    logger.info(msg)
+        msg = "No. of unique ORFs (after filtering): {}".format(len(bed_df['id'].unique()))
+        logger.info(msg)
 
     # Sort on the chrom field, and then on the chromStart field.
     bed_df.sort_values(['seqname', 'start'], ascending=[True, True], inplace=True)
+
     # convert counts to int
-    bed_df = bed_df.astype({"x_1_sum": int, "x_2_sum": int, "x_3_sum": int})
+    if 'x_1_sum' in fields_to_keep:
+        bed_df = bed_df.astype({"x_1_sum": int, "x_2_sum": int, "x_3_sum": int})
 
     if args.use_color:
         for label, color in color_mapping.items():
@@ -214,6 +217,8 @@ def main():
     ]
     utils.check_keys_exist(config, required_keys)
 
+    # TODO add check for options when not all orf fields are used
+
     sample_name_map = ribo_utils.get_sample_name_map(config)
     condition_name_map = ribo_utils.get_condition_name_map(config)
 
@@ -280,6 +285,7 @@ def main():
               must be used. Terminating."""
         logger.critical(msg)
 
+    # TODO add name to call _get_bed, use base file name
     if files_only:
         for bed_file in args.input_list:
             if not os.path.exists(bed_file):
