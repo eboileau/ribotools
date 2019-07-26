@@ -98,6 +98,8 @@ def _get_bed(input_filename, pretty_name, fields_to_keep, args):
         for label, color in color_mapping.items():
             label_m = bed_df['orf_category'] == label
             bed_df.loc[label_m, 'color'] = color
+    else:
+        bed_df['color'] = '64,64,64'
 
     # remove unused fields, and get order
     bed_df = bed_df[fields_to_keep]
