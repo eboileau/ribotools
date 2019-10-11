@@ -92,8 +92,10 @@ def main():
 
     args = parser.parse_args()
 
+    add_id = False
     names = BED6_FIELDS
     if args.trx_column:
+        add_id = True
         names = BED6_FIELDS + [args.trx_column]
 
     pep = pd.read_csv(args.input_file,
@@ -105,7 +107,7 @@ def main():
     pep['score'] = 0
     # create new id from id, chrom and strand (otherwise if there are non-unique peptides, we will
     # not be able to sort the dataframe)
-    if not args.trx_column:
+    if add_id:
         pep['id'] = pep[['id', args.trx_column]].apply(lambda x: '_'.join(x), axis=1)
     pep['id'] = pep.apply(get_ids, axis=1)
     # convert to BED6
