@@ -1,13 +1,15 @@
 #! /usr/bin/env python3
 
-"""Convert BED files from the Rp-Bp ORF predictions to bigBed
-tracks for visualisation.
+"""Convert BED files to bigBed tracks for visualisation,
+mainly to use with the Rp-Bp ORF predictions.
 
 Note: Requires the executable "bedToBigBed" and the "chrom.sizes"
       file which can be obtained with the "fetchChromSizes" script.
       The chrom names from the predictions must match those
       of chrom.sizes (UCSC), otherwise they must be re-written by
       passing the right options.
+
+      The header must match those of bed_utils.bed12_field_names
 
 Functions:
     _get_bed
@@ -52,7 +54,7 @@ color_mapping = {
 }
 
 
-def _get_bed(input_filename, pretty_name, fields_to_keep, args):
+def _get_bed(input_filename, fields_to_keep, args, pretty_name):
 
     """Get BED12 file and adjust features. The fields must match those
     defined in bed_utils.bed12_field_names plus fields passed via
@@ -69,7 +71,7 @@ def _get_bed(input_filename, pretty_name, fields_to_keep, args):
             seqname_m = bed_df['seqname'] == str(chrom_old)
             bed_df.loc[seqname_m, 'seqname'] = str(chrom_new)
 
-    msg = "No. of unique ORFs: {}".format(len(bed_df['id'].unique()))
+    msg = "No. of unique features: {}".format(len(bed_df['id'].unique()))
     logger.info(msg)
 
     # add display label, if orf_type is found, make sure orf_category is also in fields
@@ -84,8 +86,11 @@ def _get_bed(input_filename, pretty_name, fields_to_keep, args):
             remove_m = remove_m | other_m
         bed_df = bed_df[~remove_m]
 
-        msg = "No. of unique ORFs (after filtering): {}".format(len(bed_df['id'].unique()))
+        msg = "No. of unique features (after filtering): {}".format(len(bed_df['id'].unique()))
         logger.info(msg)
+
+        # adjust name
+        pretty_name = pretty_name + '.orfs'
 
     # Sort on the chrom field, and then on the chromStart field.
     bed_df.sort_values(['seqname', 'start'], ascending=[True, True], inplace=True)
@@ -98,6 +103,9 @@ def _get_bed(input_filename, pretty_name, fields_to_keep, args):
         for label, color in color_mapping.items():
             label_m = bed_df['orf_category'] == label
             bed_df.loc[label_m, 'color'] = color
+    elif args.keep_color:
+        # color field must be a string
+        pass
     else:
         bed_df['color'] = '64,64,64'
 
@@ -105,9 +113,7 @@ def _get_bed(input_filename, pretty_name, fields_to_keep, args):
     bed_df = bed_df[fields_to_keep]
 
     # Writes bed file to output directory
-    pretty_name = pretty_name + '.orfs'
     output_filename = os.path.join(args.dirloc, pretty_name)
-
     pandas_utils.write_df(bed_df,
                           str(output_filename + '.tmp.bed'),
                           index=False,
@@ -155,12 +161,27 @@ def main():
         available on the user's path, and can be downloaded from 
         'http://hgdownload.soe.ucsc.edu/admin/exe/'.""")
 
-    parser.add_argument('config', help="The (yaml) config file.")
+    parser.add_argument('chrSizes', help="The 'chrom.sizes' file for the UCSC database.")
 
     parser.add_argument('dirloc', help="""The output directory. All BED files are 
         temporarily re-written to this location.""")
 
-    parser.add_argument('chrSizes', help="The 'chrom.sizes' file for the UCSC database.")
+    parser.add_argument('--config', help="""The (yaml) config file for the Rp-Bp predictions.
+        If not given, then [--input-list] with [--input-type f] must be used.""", type=str)
+
+    parser.add_argument('--input-list', help="""A space-delimited list of input files, sample 
+        names or conditions, each quoted separately. They must either be all files, or 
+        sample/condition names (in which case the [--config] option must also be used), and
+        this must be specified with the [--input-type]. Only these will be converted.""",
+                        nargs='*', required='--input-type' in sys.argv, type=str)
+
+    parser.add_argument('--output-list', help="""A space-delimited list of output file names,
+        each quoted separately, without extension (required if [--input-type f], else ignored.""",
+                        nargs='*', type=str)
+
+    parser.add_argument('--input-type', help="""The 'type' of [--input-list], either f (files),
+        s (samples) or c (conditions).""", required='--input-list' in sys.argv, type=str,
+                        choices=['f', 's', 'c'])
 
     parser.add_argument('--add-chr', help="""If this flag is present then 'chr' will be pre-pended
         to sequence names. This is done before any other changes to sequence names, so this
@@ -184,21 +205,16 @@ def main():
         predictions from the Rp-Bp pipeline. The [--configure-field] option is required if using 
         colour, even if no extra fields are given.""", action='store_true')
 
+    parser.add_argument('--keep-color', help="""If this flag is present then color fields 
+            present in the original bed files are used (string). The [--configure-field] option is 
+            required if using colour, even if no extra fields are given.""", action='store_true')
+
     parser.add_argument('-k', '--keep-other', help="""If this flag is present then ORFs labeled
         as "Other" will be included. They are discarded by default.""", action='store_true')
 
     parser.add_argument('-a', '--all-replicates', help="""If this flag is present then bigBed files
         are created for all replicates in the config file, in addition to the merged replicates or
         conditions. By default, only the latter are created.""", action='store_true')
-
-    parser.add_argument('--input-list', help="""A space-delimited list of input files, sample names
-        or conditions, each quoted separately. They must either be all files, or sample/condition
-        names, and this must be specified with the [--input-type]. Only these will be converted.""",
-        nargs='*', required='--input-type' in sys.argv, type=str)
-
-    parser.add_argument('--input-type', help="""The 'type' of [--input-list], either f (files),
-        s (samples) or c (conditions).""", required='--input-list' in sys.argv, type=str,
-        choices=['f', 's', 'c'])
 
     parser.add_argument('--overwrite', help='''If this flag is present, then existing files
         will be overwritten.''', action='store_true')
@@ -207,22 +223,30 @@ def main():
     args = parser.parse_args()
     logging_utils.update_logging(args)
 
+    if args.input_list and not args.config and args.input_type in ['s', 'c']:
+        logger.critical("Missing [--config]")
+        return
+    if args.input_list and not args.output_list and args.input_type == 'f':
+        logger.critical("Missing [--output-list]")
+        return
+
     msg = "[create-bigBed-tracks]: {}".format(' '.join(sys.argv))
     logger.info(msg)
 
-    config = yaml.load(open(args.config), Loader=yaml.FullLoader)
+    if args.config:
+        config = yaml.load(open(args.config), Loader=yaml.FullLoader)
 
-    required_keys = [
-        'riboseq_data',
-        'riboseq_samples',
-        'riboseq_biological_replicates'
-    ]
-    utils.check_keys_exist(config, required_keys)
+        required_keys = [
+            'riboseq_data',
+            'riboseq_samples',
+            'riboseq_biological_replicates'
+        ]
+        utils.check_keys_exist(config, required_keys)
 
-    # TODO add check for options when not all orf fields are used
+        # TODO add check for options when not all orf fields are used
 
-    sample_name_map = ribo_utils.get_sample_name_map(config)
-    condition_name_map = ribo_utils.get_condition_name_map(config)
+        sample_name_map = ribo_utils.get_sample_name_map(config)
+        condition_name_map = ribo_utils.get_condition_name_map(config)
 
     files_only = False
     sample_names = {}
@@ -238,6 +262,10 @@ def main():
     else:
         sample_names = config['riboseq_samples']
         condition_names = ribo_utils.get_riboseq_replicates(config)
+
+    if not files_only and args.output_list:
+        msg = "[--output-list] will be ignored"
+        logger.warning(msg)
 
     # check output path
     if os.path.exists(args.dirloc):
@@ -289,11 +317,11 @@ def main():
 
     # TODO add name to call _get_bed, use base file name
     if files_only:
-        for bed_file in args.input_list:
+        for bed_file, output_file in zip(args.input_list, args.output_list):
             if not os.path.exists(bed_file):
                 msg = "Could not find the bed file: {}. Terminating.".format(bed_file)
                 raise FileNotFoundError(msg)
-            bed_file_name = _get_bed(bed_file, fields_to_keep, args)
+            bed_file_name = _get_bed(bed_file, fields_to_keep, args, output_file)
             bed = bed_file_name + '.tmp.bed'
             bb = bed_file_name + '.bb'
             _convert(bed, bb, use_config_fields, args)
@@ -332,7 +360,7 @@ def main():
                 raise FileNotFoundError(msg)
 
             pretty_name = sample_name_map[name]
-            bed_file_name = _get_bed(predicted_orfs, pretty_name, fields_to_keep, args)
+            bed_file_name = _get_bed(predicted_orfs, fields_to_keep, args, pretty_name)
             bed = bed_file_name + '.tmp.bed'
             bb = bed_file_name + '.bb'
             _convert(bed, bb, use_config_fields, args)
@@ -360,7 +388,7 @@ def main():
             raise FileNotFoundError(msg)
 
         pretty_name = condition_name_map[name]
-        bed_file_name = _get_bed(predicted_orfs, pretty_name, fields_to_keep, args)
+        bed_file_name = _get_bed(predicted_orfs, fields_to_keep, args, pretty_name)
         bed = bed_file_name + '.tmp.bed'
         bb = bed_file_name + '.bb'
         _convert(bed, bb, use_config_fields, args)
