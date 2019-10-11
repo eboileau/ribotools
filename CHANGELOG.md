@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `create_bigBed_tracks.py` to pgrms
 - MANIFEST.in, scripts (`create_trackDb`) and data (`fields.txt`)
 - scripts dge/ and R script for DGEA from htseq count workflow
+- `pep_bed6_to_bed12.py` to pgrms
 
 ## [0.1.0]
 

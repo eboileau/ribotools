@@ -3,6 +3,10 @@
 """Convert a BED6 list of peptides to BED12, removing
 non-unique peptides (based on "multiple match" of the same
 peptide sequence to different coordinates).
+
+Note: The id must be of the form pepID_trxID (default,
+      any identifier), or else trxID must be included
+      as an additional column in field 7.
 """
 
 import os
@@ -22,7 +26,7 @@ def get_ids(row):
 
 def get_pep_id(bed_id):
     # re-assign pep_id
-    return str(bed_id.split('&')[0])
+    return str(bed_id.split('&')[0].split('_')[0])
 
 
 def get_bed12_fields(group):
@@ -84,18 +88,25 @@ def main():
     parser.add_argument('-o', '--output-file', help="Output file (only file name bed.gz)")
     parser.add_argument('-skip', '--skiprows', help="Number of rows to skip, including header"
                                                     "(skipped and overwritten)", type=int, default=0)
+    parser.add_argument('-trx', '--trx-column', help="Name of the transcript id column (field 7).")
 
     args = parser.parse_args()
 
+    names = BED6_FIELDS
+    if args.trx_column:
+        names = BED6_FIELDS + [args.trx_column]
+
     pep = pd.read_csv(args.input_file,
                       header=None,
-                      names=BED6_FIELDS,
+                      names=names,
                       sep='\t',
                       skiprows=args.skiprows)
 
     pep['score'] = 0
     # create new id from id, chrom and strand (otherwise if there are non-unique peptides, we will
     # not be able to sort the dataframe)
+    if not args.trx_column:
+        pep['id'] = pep[['id', args.trx_column]].apply(lambda x: '_'.join(x), axis=1)
     pep['id'] = pep.apply(get_ids, axis=1)
     # convert to BED6
     bed6 = bed_utils.sort(pep)
