@@ -1,8 +1,9 @@
 #!/biosw/R/3.5.1/bin/Rscript
 # #!/usr/bin/Rscript
 
-## Usage: ./run-degRibo-from-htseq.R [config] [num] [denom] [dirloc]
+## Usage: ./run-degRibo-from-htseq.R [1/2] [config] [num] [denom] [dirloc]
 
+## 1/2: 1 mouse, 2 human
 ## config: same configuration file used when calling run-htseq-workflow
 ## num:    condition level to compare, e.g. treatment
 ## denom:  reference condition level, e.g. control
@@ -48,7 +49,6 @@ library(ashr)
 
 library("Glimma")
 library("genefilter")
-library("org.Mm.eg.db")
 
 library(yaml)
 
@@ -60,7 +60,7 @@ library(openxlsx)
 
 # ---------------------------------------------------------
 
-write_results <- function(dds, inter, ribo, rna, num, denom, shrunken) {
+write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
 
     ## filter based on the "un-shrunken p-values"
     
@@ -156,11 +156,19 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken) {
     res <- res %>%
       filter((padj.inter < alpha.set) | (padj.ribo < alpha.set & abs(log2FC.ribo) > lfcThreshold.set) | (padj.rna < alpha.set & abs(log2FC.rna) > lfcThreshold.set))
                          
-    res$symbol <- mapIds(org.Mm.eg.db,
-                         keys=res$gene,
-                         column="SYMBOL",
-                         keytype="ENSEMBL",
-                         multiVals="first")    
+    if (genome == 1) {
+        res$symbol <- mapIds(org.Mm.eg.db,
+                             keys=res$gene,
+                             column="SYMBOL",
+                             keytype="ENSEMBL",
+                             multiVals="first")    
+    } else if (genome == 2) {
+        res$symbol <- mapIds(org.Hs.eg.db,
+                             keys=res$gene,
+                             column="SYMBOL",
+                             keytype="ENSEMBL",
+                             multiVals="first")
+    }
     
     if (shrunken == "shrunken") {
     
@@ -208,12 +216,21 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken) {
 # config file
 args <- commandArgs(trailingOnly=TRUE)
 
-params.file <- args[1]
+genome <- args[1]
+if (genome == 1) {
+ library("org.Mm.eg.db")
+} else if (genome == 2) {
+ library("org.Hs.eg.db")
+} else {
+ stop("Genome 1=mouse, 2=human")
+}
+
+params.file <- args[2]
 params <- yaml::read_yaml(params.file)
 
-num <- args[2]
-denom <- args[3]
-dirloc.out <- args[4]
+num <- args[3]
+denom <- args[4]
+dirloc.out <- args[5]
 
 # default from pipeline
 base.loc <- "count-tables"
@@ -414,12 +431,20 @@ res.inter.shrunken$pvalue <- res.inter$pvalue
 
 ## Glimma, only for the interaction, but write all results to disk     
 
-res.inter.shrunken$symbol <- mapIds(org.Mm.eg.db,
-                                    keys=rownames(res.inter.shrunken),
-                                    column="SYMBOL",
-                                    keytype="ENSEMBL",
-                                    multiVals="first")
-                
+if (genome == 1) {
+    res.inter.shrunken$symbol <- mapIds(org.Mm.eg.db,
+                                        keys=rownames(res.inter.shrunken),
+                                        column="SYMBOL",
+                                        keytype="ENSEMBL",
+                                        multiVals="first")
+} else if (genome == 2) {
+ res.inter.shrunken$symbol <- mapIds(org.Hs.eg.db,
+                                     keys=rownames(res.inter.shrunken),
+                                     column="SYMBOL",
+                                     keytype="ENSEMBL",
+                                     multiVals="first")
+}
+
 is.de <- as.numeric(res.inter.shrunken$padj < alpha.set)
 anno <- data.frame(GeneID=rownames(res.inter.shrunken), symbol=res.inter.shrunken$symbol)
 
@@ -449,7 +474,8 @@ write_results(ddsHTSeq.reduced,
               res.rna,
               num, 
               denom, 
-              "")
+              "",
+              genome)
                 
 write_results(ddsHTSeq.reduced, 
               res.inter.shrunken, 
@@ -457,5 +483,6 @@ write_results(ddsHTSeq.reduced,
               res.rna.shrunken,
               num, 
               denom, 
-              "shrunken")
+              "shrunken",
+              genome)
               
