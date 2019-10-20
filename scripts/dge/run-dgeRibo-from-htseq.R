@@ -49,7 +49,9 @@ library(ashr)
 
 library("Glimma")
 library("genefilter")
-
+library("org.Mm.eg.db")
+ library("org.Hs.eg.db")
+ 
 library(yaml)
 
 library(dplyr)
@@ -217,13 +219,7 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
 args <- commandArgs(trailingOnly=TRUE)
 
 genome <- args[1]
-if (genome == 1) {
- library("org.Mm.eg.db")
-} else if (genome == 2) {
- library("org.Hs.eg.db")
-} else {
- stop("Genome 1=mouse, 2=human")
-}
+if (!genome %in% c(1,2)) { stop("Genome 1=mouse, 2=human") }
 
 params.file <- args[2]
 params <- yaml::read_yaml(params.file)
