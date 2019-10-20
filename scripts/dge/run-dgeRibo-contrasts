@@ -30,4 +30,4 @@ DIRLOC="$4"
 while IFS=$'\t' read -r num denom
  do
   ./run-dgeRibo-from-htseq.R $GENOME $CONFIG $num $denom $DIRLOC
- done < <(tail -n+2 "$1") 
+ done < <(tail -n+2 "$2") 
