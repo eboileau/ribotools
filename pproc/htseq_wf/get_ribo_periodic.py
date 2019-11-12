@@ -246,7 +246,7 @@ def main():
     if len(lengths) == 0:
         msg = ("No periodic read lengths and offsets were found. Try relaxing "
                "min_metagene_profile_count, min_metagene_bf_mean, "
-               "max_metagene_bf_var, and/or min_metagene_bf_likelihood. Qutting.")
+               "max_metagene_bf_var, and/or min_metagene_bf_likelihood. Quitting.")
         logger.critical(msg)
         return
 

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Isoform strategy (Fix reference to `btea`).
 
 ### Added
+- `get_all_bam_periodic.py` to pgrms
 - `create_bigBed_tracks.py` to pgrms
 - MANIFEST.in, scripts (`create_trackDb`) and data (`fields.txt`)
 - scripts dge/ and R script for DGEA from htseq count workflow
