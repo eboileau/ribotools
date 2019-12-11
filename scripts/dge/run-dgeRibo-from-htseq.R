@@ -79,7 +79,7 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
         res.inter.tib <- inter %>%
             data.frame() %>%
             select(log2FoldChange, padj, svalue) %>%
-            rename(log2FC.inter = log2FoldChange, 
+            dplyr::rename(log2FC.inter = log2FoldChange, 
                 padj.inter = padj,
                 svalue.inter = svalue) %>%
             rownames_to_column(var="gene") %>% 
@@ -89,7 +89,7 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
         res.ribo.tib <- ribo %>%
             data.frame() %>%
             select(log2FoldChange, padj, svalue) %>%
-            rename(log2FC.ribo = log2FoldChange, 
+            dplyr::rename(log2FC.ribo = log2FoldChange, 
                 padj.ribo = padj,
                 svalue.ribo = svalue) %>%
             rownames_to_column(var="gene") %>% 
@@ -99,7 +99,7 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
         res.rna.tib <- rna %>%
             data.frame() %>%
             select(log2FoldChange, padj, svalue) %>%
-            rename(log2FC.rna = log2FoldChange, 
+            dplyr::rename(log2FC.rna = log2FoldChange, 
                 padj.rna = padj,
                 svalue.rna = svalue) %>%
             rownames_to_column(var="gene") %>% 
@@ -111,7 +111,7 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
         res.inter.tib <- inter %>%
             data.frame() %>%
             select(log2FoldChange, padj) %>%
-            rename(log2FC.inter = log2FoldChange, 
+            dplyr::rename(log2FC.inter = log2FoldChange, 
                 padj.inter = padj) %>%
             rownames_to_column(var="gene") %>% 
             as_tibble()
@@ -120,7 +120,7 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
         res.ribo.tib <- ribo %>%
             data.frame() %>%
             select(log2FoldChange, padj) %>%
-            rename(log2FC.ribo = log2FoldChange, 
+            dplyr::rename(log2FC.ribo = log2FoldChange, 
                 padj.ribo = padj) %>%
             rownames_to_column(var="gene") %>% 
             as_tibble()
@@ -129,7 +129,7 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
         res.rna.tib <- rna %>%
             data.frame() %>%
             select(log2FoldChange, padj) %>%
-            rename(log2FC.rna = log2FoldChange, 
+            dplyr::rename(log2FC.rna = log2FoldChange, 
                 padj.rna = padj) %>%
             rownames_to_column(var="gene") %>% 
             as_tibble()
@@ -163,7 +163,7 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
     # <- merge(tata, by = "gene", all.x = TRUE, all.y = FALSE)
     
     res <- res %>%
-      filter((padj.inter < alpha.set) | (padj.ribo < alpha.set & abs(log2FC.ribo) > lfcThreshold.set) | (padj.rna < alpha.set & abs(log2FC.rna) > lfcThreshold.set))
+      dplyr::filter((padj.inter < alpha.set) | (padj.ribo < alpha.set & abs(log2FC.ribo) > lfcThreshold.set) | (padj.rna < alpha.set & abs(log2FC.rna) > lfcThreshold.set))
     
     res$symbol <- map_ids(genome, res$gene)
     
@@ -192,7 +192,7 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
     sf <- dds$sizeFactor %>%
         data.frame() %>%    
         rownames_to_column(var="sample") %>% 
-        rename(sizeFactor = ".") %>%
+        dplyr::rename(sizeFactor = ".") %>%
         as_tibble()
             
     writeDataTable(wb, sheet=2, x= sf)
@@ -259,7 +259,7 @@ rna.files <- list.files(dirloc.rna)
 
 rna.table <- params$rnaseq_sample_name_map %>% 
     data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>% 
-    rename(sampleName = ".")
+    dplyr::rename(sampleName = ".")
 
 rna.table <- rna.table %>% 
     rowwise() %>% mutate(fileName=rna.files[grep(sampleName, rna.files)])
@@ -272,7 +272,7 @@ rna.table$condition[grep(denom, rna.table$sampleName, fixed=TRUE)] <- denom
 
 ribo.table <- params$riboseq_sample_name_map %>% 
     data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>% 
-    rename(sampleName = ".")
+    dplyr::rename(sampleName = ".")
 
 ribo.table <- ribo.table %>% 
     rowwise() %>% mutate(fileName=ribo.files[grep(sampleName, ribo.files)])
@@ -289,7 +289,7 @@ sampleTable$condition <- factor(sampleTable$condition)
 sampleTable$assay <- factor(sampleTable$assay)
 
 ## reduce table to one contrast
-sampleTable <- sampleTable %>% filter(!is.na(condition))
+sampleTable <- sampleTable %>% dplyr::filter(!is.na(condition))
 
 # write for reference
 filen <- paste("condition_", num, "_vs_", denom, "_sampleTable.csv", sep="")
