@@ -4,7 +4,7 @@
 ##      run-dgeRibo-contrasts GENOME CONTRASTS CONFIG DIRLOC 
 ##
 ## Options:
-##      GENOME 1=mouse, 2=human
+##      GENOME 1=mouse, 2=human, 3=rat
 ##      CONTRASTS The contrasts, tab separated file with 2 columns, the condition to test on the first column,
 ##      and the reference on the second column, with a header on first line.
 ##      CONFIG The yaml config file to pass to the R script

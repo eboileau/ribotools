@@ -1,9 +1,9 @@
 #!/biosw/R/3.5.1/bin/Rscript
 # #!/usr/bin/Rscript
 
-## Usage: ./run-degRibo-from-htseq.R [1/2] [config] [num] [denom] [dirloc]
+## Usage: ./run-degRibo-from-htseq.R [1/2/3] [config] [num] [denom] [dirloc]
 
-## 1/2: 1 mouse, 2 human
+## 1/2/3: 1 mouse, 2 human, 3 rat
 ## config: same configuration file used when calling run-htseq-workflow
 ## num:    condition level to compare, e.g. treatment
 ## denom:  reference condition level, e.g. control
@@ -12,11 +12,15 @@
 ## NOTE: num, denom must match the names used by run-htseq-workflow
 ##       in constructing the file names, given by ribo_ and rnaseq_sample_name_map
 
+##       We assume that gene ids are ensembl ids ** TODO generalise, pass keytype as args
+
 # ---------------------------------------------------------
 
 ## Ribo- and RNA-seq are both filtered independently and ONLY genes where
-## both have non-zero values for ALL replicates are kept.
+## both have non-zero values for ALL replicates are kept.  
 ## Joint normalisation is performed within DESeq, see below for separate normalisation.
+## ** TODO test separate normalisation, relax filter (non-zero ALL), to allow 
+##         Ribo- and/or RNA-"specific" genes
 
 ## Independent filtering using row median (mean is default)
 
@@ -37,7 +41,7 @@
 
 ## Default LFC and FDR threshold
 
-lfcThreshold.set <- log2(1.5)
+lfcThreshold.set <- log2(1.2)
 altHypothesis.set <- "greaterAbs"
 alpha.set <- 0.05
 
@@ -49,9 +53,11 @@ library(ashr)
 
 library("Glimma")
 library("genefilter")
+
 library("org.Mm.eg.db")
- library("org.Hs.eg.db")
- 
+library("org.Hs.eg.db")
+library("org.Rn.eg.db")
+
 library(yaml)
 
 library(dplyr)
@@ -61,6 +67,7 @@ library(purrr)
 library(openxlsx)
 
 # ---------------------------------------------------------
+## Functions
 
 write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
 
@@ -157,20 +164,8 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
     
     res <- res %>%
       filter((padj.inter < alpha.set) | (padj.ribo < alpha.set & abs(log2FC.ribo) > lfcThreshold.set) | (padj.rna < alpha.set & abs(log2FC.rna) > lfcThreshold.set))
-                         
-    if (genome == 1) {
-        res$symbol <- mapIds(org.Mm.eg.db,
-                             keys=res$gene,
-                             column="SYMBOL",
-                             keytype="ENSEMBL",
-                             multiVals="first")    
-    } else if (genome == 2) {
-        res$symbol <- mapIds(org.Hs.eg.db,
-                             keys=res$gene,
-                             column="SYMBOL",
-                             keytype="ENSEMBL",
-                             multiVals="first")
-    }
+    
+    res$symbol <- map_ids(genome, res$gene)
     
     if (shrunken == "shrunken") {
     
@@ -213,13 +208,22 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
 
 }
 
+
+map_ids <- function(genome, keys, keytype="ENSEMBL", column="SYMBOL") {
+
+    genome <- switch(genome, org.Mm.eg.db, org.Hs.eg.db, org.Rn.eg.db)
+    mapIds(genome, keys=keys, column=column, keytype=keytype, multiVals="first")
+}
+
+
 # ---------------------------------------------------------
+## Call
 
 # config file
 args <- commandArgs(trailingOnly=TRUE)
 
 genome <- args[1]
-if (!genome %in% c(1,2)) { stop("Genome 1=mouse, 2=human") }
+if (!genome %in% c(1,2,3)) { stop("Genome 1=mouse, 2=human, 3=rat") }
 
 params.file <- args[2]
 params <- yaml::read_yaml(params.file)
@@ -250,7 +254,8 @@ rna.files <- list.files(dirloc.rna)
 ## construct sample table (coldata)
 
 # Currently one contrast at a time, but yet construct full table.
-# We could do all in one run, and subset the results using contrast
+# We could do all in one run, and subset the results using contrast...
+## TODO do not call each contrast separately...
 
 rna.table <- params$rnaseq_sample_name_map %>% 
     data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>% 
@@ -427,20 +432,7 @@ res.inter.shrunken$pvalue <- res.inter$pvalue
 
 ## Glimma, only for the interaction, but write all results to disk     
 
-if (genome == 1) {
-    res.inter.shrunken$symbol <- mapIds(org.Mm.eg.db,
-                                        keys=rownames(res.inter.shrunken),
-                                        column="SYMBOL",
-                                        keytype="ENSEMBL",
-                                        multiVals="first")
-} else if (genome == 2) {
- res.inter.shrunken$symbol <- mapIds(org.Hs.eg.db,
-                                     keys=rownames(res.inter.shrunken),
-                                     column="SYMBOL",
-                                     keytype="ENSEMBL",
-                                     multiVals="first")
-}
-
+res.inter.shrunken$symbol <- map_ids(genome, rownames(res.inter.shrunken))
 is.de <- as.numeric(res.inter.shrunken$padj < alpha.set)
 anno <- data.frame(GeneID=rownames(res.inter.shrunken), symbol=res.inter.shrunken$symbol)
 
