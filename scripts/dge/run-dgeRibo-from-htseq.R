@@ -1,9 +1,9 @@
 #!/biosw/R/3.5.1/bin/Rscript
 # #!/usr/bin/Rscript
 
-## Usage: ./run-degRibo-from-htseq.R [1/2/3] [config] [num] [denom] [dirloc]
+## Usage: ./run-degRibo-from-htseq.R [mm/rn/hs] [config] [num] [denom] [dirloc]
 
-## 1/2/3: 1 mouse, 2 human, 3 rat
+## mm = mouse, rn = rat, hs = human
 ## config: same configuration file used when calling run-htseq-workflow
 ## num:    condition level to compare, e.g. treatment
 ## denom:  reference condition level, e.g. control
@@ -211,8 +211,8 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
 
 map_ids <- function(genome, keys, keytype="ENSEMBL", column="SYMBOL") {
 
-    genome <- switch(genome, org.Mm.eg.db, org.Hs.eg.db, org.Rn.eg.db)
-    mapIds(genome, keys=keys, column=column, keytype=keytype, multiVals="first")
+    gn <- switch(genome, mm=org.Mm.eg.db, hs=org.Hs.eg.db, rn=org.Rn.eg.db)
+    mapIds(gn, keys=keys, column=column, keytype=keytype, multiVals="first")
 }
 
 
@@ -223,7 +223,7 @@ map_ids <- function(genome, keys, keytype="ENSEMBL", column="SYMBOL") {
 args <- commandArgs(trailingOnly=TRUE)
 
 genome <- args[1]
-if (!genome %in% c(1,2,3)) { stop("Genome 1=mouse, 2=human, 3=rat") }
+if (!genome %in% c("mm", "rn", "hs")) { stop("Genome mm=mouse, rn=rat, hs=human") }
 
 params.file <- args[2]
 params <- yaml::read_yaml(params.file)
