@@ -5,7 +5,7 @@ non-unique peptides (based on "multiple match" of the same
 peptide sequence to different coordinates).
 
 Note: The id must be of the form pepID_trxID (default,
-      any identifier), or else trxID must be included
+      any identifier), trxID_pepID, or else trxID must be included
       as an additional column in field 7.
 """
 
@@ -18,6 +18,12 @@ import pbio.utils.bed_utils as bed_utils
 BED12_FIELDS = bed_utils.bed12_field_names
 BED10_FIELDS = [f for f in BED12_FIELDS if f not in (['id', 'color'])]
 BED6_FIELDS = bed_utils.bed6_field_names
+
+
+def revert_ids(idx):
+    idl = idx.rsplit('_')
+    idl.insert(0, idl.pop())
+    return '_'.join(idl)
 
 
 def get_ids(row):
@@ -82,12 +88,13 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      description="""Convert peptides BED6 to BED12, removing
                                      non-unique matches. Fields must be in the intended BED6
-                                     order.""")
+                                     order. Score overwritten.""")
 
     parser.add_argument('-f', '--input-file', help="BED6 file (full path).")
     parser.add_argument('-o', '--output-file', help="Output file (only file name bed.gz)")
     parser.add_argument('-skip', '--skiprows', help="Number of rows to skip, including header"
                                                     "(skipped and overwritten)", type=int, default=0)
+    parser.add_argument('-rev', '--revert-ids', help="ID is of the form trxID_pepID.")
     parser.add_argument('-trx', '--trx-column', help="Name of the transcript id column (field 7).")
 
     args = parser.parse_args()
@@ -103,8 +110,13 @@ def main():
                       names=names,
                       sep='\t',
                       skiprows=args.skiprows)
-
-    pep['score'] = 0
+    # currently, we ignore the score, and overwrite: used as gray scale intensity
+    pep['score'] = 100
+    # we need chrom as str
+    pep['seqname'] = pep['seqname'].astype(str)
+    # adjust the id
+    if args.revert_ids:
+        pep['id'] = pep['id'].apply(revert_ids)
     # create new id from id, chrom and strand (otherwise if there are non-unique peptides, we will
     # not be able to sort the dataframe)
     if add_id:

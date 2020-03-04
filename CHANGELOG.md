@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- `pep_bed6_to_bed12.py` added option
+
 ### Removed
 - Isoform strategy (Fix reference to `btea`).
 
