@@ -23,6 +23,7 @@ import logging
 import yaml
 import json
 import csv
+import pandas as pd
 
 import pbio.misc.utils as utils
 import pbio.misc.shell_utils as shell_utils
@@ -70,6 +71,9 @@ def _get_bed(input_filename, fields_to_keep, args, pretty_name):
         for chrom_old, chrom_new in args.chr_dict.items():
             seqname_m = bed_df['seqname'] == str(chrom_old)
             bed_df.loc[seqname_m, 'seqname'] = str(chrom_new)
+    if args.chr_file:
+        chr_map = pd.Series.from_csv(args.chr_file, header=None).to_dict()
+        bed_df.replace({"seqname": chr_map}, inplace=True)
 
     msg = "No. of unique features: {}".format(len(bed_df['id'].unique()))
     logger.info(msg)
@@ -187,9 +191,13 @@ def main():
         to sequence names. This is done before any other changes to sequence names, so this
         must be taken into account if giving a dictionary mapping""", action='store_true')
 
-    parser.add_argument('-d', '--chr-dict', help="""A dictionary mapping of sequence names found
+    parser.add_argument('-cd', '--chr-dict', help="""A dictionary mapping of sequence names found
         in the data to the sequence names, as in "chrom.sizes". The format is as follows:
-        '{"key":"value"}'""", type=json.loads)
+        '{"key/old":"value/new"}'""", type=json.loads)
+
+    parser.add_argument('-cf', '--chr-file', help="""A dictionary mapping of sequence names to 
+        the sequence names, as in "chrom.sizes", given as a CSV file without header: old,new.
+        The file can contain any association, only those in the data will be used.""")
 
     parser.add_argument('--configure-fields', help="""A file with comma-separated items (one per line)
         corresponding to fields that will be included in the bigBed file. The field names must
