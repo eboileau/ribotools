@@ -72,7 +72,10 @@ def _get_bed(input_filename, fields_to_keep, args, pretty_name):
             seqname_m = bed_df['seqname'] == str(chrom_old)
             bed_df.loc[seqname_m, 'seqname'] = str(chrom_new)
     if args.chr_file:
-        chr_map = pd.Series.from_csv(args.chr_file, header=None).to_dict()
+        chr_map = pd.read_csv(args.chr_file, 
+                              header=None,
+                              index_col=0, 
+                              squeeze=True).to_dict()
         bed_df.replace({"seqname": chr_map}, inplace=True)
 
     msg = "No. of unique features: {}".format(len(bed_df['id'].unique()))
