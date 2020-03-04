@@ -94,7 +94,7 @@ def main():
     parser.add_argument('-o', '--output-file', help="Output file (only file name bed.gz)")
     parser.add_argument('-skip', '--skiprows', help="Number of rows to skip, including header"
                                                     "(skipped and overwritten)", type=int, default=0)
-    parser.add_argument('-rev', '--revert-ids', help="ID is of the form trxID_pepID.")
+    parser.add_argument('-rev', '--revert-ids', help="ID is of the form trxID_pepID.", action='store_true')
     parser.add_argument('-trx', '--trx-column', help="Name of the transcript id column (field 7).")
 
     args = parser.parse_args()
