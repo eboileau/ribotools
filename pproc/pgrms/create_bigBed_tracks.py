@@ -139,7 +139,7 @@ def _convert(bed, bb, use_config_fields, args):
     if use_config_fields:
         cmd = "bedToBigBed -as={} -type={} -extraIndex={} {} {} {}".format(use_config_fields['as_file'],
                                                                            use_config_fields['bed_type'],
-                                                                           "name",
+                                                                           args.extra_index,
                                                                            bed,
                                                                            args.chrSizes,
                                                                            bb)
@@ -210,6 +210,10 @@ def main():
         by an empty line. See e.g.3 here: https://genome.ucsc.edu/goldenpath/help/bigBed.html.
         One extra index will be created on the name field by default. If multiple BED files are
         passed in, these will be used for all input files.""", required='--use-color' in sys.argv)
+
+    parser.add_argument('--extra-index', help="""A comma-separated string of fields to which add 
+        an index is added, passed to bedToBigBed -extraIndex. Silently ignored, unless
+        [--configure-fields] is used.""", default='name', type=str)
 
     parser.add_argument('--use-color', help="""If this flag is present then color (field 9) fields 
         are added. These are currently not configurable, and presumably used only with the ORF 
