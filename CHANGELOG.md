@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Isoform strategy (Fix reference to `btea`).
 
 ### Added
+- notebooks
 - match_appris_scores.py, get_psite_count_table.py (draft scripts only)
 - genome to dge script
 - `get_all_bam_periodic.py` to pgrms

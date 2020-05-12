@@ -147,9 +147,6 @@ def main():
     parser.add_argument('orfs', help="The annotated transcripts (bed) file")
     parser.add_argument('out', help="The (output) csv.gz counts file")
 
-    parser.add_argument('-p', '--num-cpus', help="The number of processors to use",
-        type=int, default=default_num_cpus)
-
     parser.add_argument('--is-sam', help="If this flag is present, the alignment file will "
         "be parsed as SAM rather than BAM", action='store_true')
 
