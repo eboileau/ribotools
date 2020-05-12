@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - notebooks
-- match_appris_scores.py, get_psite_count_table.py (draft scripts only)
+- match_appris_scores.py, get_psite_count_table.py, get_all_seq_filtering_counts.py (draft scripts only)
 - genome to dge script
 - `get_all_bam_periodic.py` to pgrms
 - `create_bigBed_tracks.py` to pgrms
