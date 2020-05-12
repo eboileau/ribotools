@@ -1,22 +1,32 @@
 #! /usr/bin/env python3
 
+
+import sys
 import argparse
 import collections
+import shlex
 import numpy as np
 import pandas as pd
-import sys
 
-import bio_utils.bam_utils as bam_utils
-import bio_utils.bed_utils as bed_utils
-import misc.pandas_utils as pandas_utils
+import pbio.utils.bam_utils as bam_utils
+import pbio.utils.bed_utils as bed_utils
+
+import pbio.misc.slurm as slurm
+import pbio.misc.pandas_utils as pandas_utils
 
 import logging
-import misc.logging_utils as logging_utils
+import pbio.misc.logging_utils as logging_utils
+
+from pproc.defaults import default_num_cpus, default_mem, metagene_options
+
 logger = logging.getLogger(__name__)
 
 
-default_num_cpus = 1
 default_lengths = []
+
+# When called from the pyproc pipeline (create-rna-profiles), default
+# options (or else specified via the configuration file) are always
+# passed as arguments.
 
 default_start_upstream = 300
 default_start_downstream = 300
@@ -25,6 +35,7 @@ default_end_downstream = 300
 
 
 def get_interval_df(start, end, seqname, strand):
+    
     interval_df = pd.DataFrame()
     interval_df['start'] = start
     interval_df['end'] = end
@@ -32,7 +43,9 @@ def get_interval_df(start, end, seqname, strand):
     interval_df['strand'] = strand
     interval_df['id'] = "."
     interval_df['score'] = 0
+    
     return interval_df
+
 
 def get_length_strand_profiles(matches, profile_length):
     init = lambda: np.zeros(profile_length, int)
@@ -51,7 +64,9 @@ def get_length_strand_profiles(matches, profile_length):
         
     return length_strand_profiles
 
+
 def get_metagene_profile_df(length, type_label, length_strand_profiles, upstream, downstream):
+    
     reverse_metagene_profile = length_strand_profiles[(length, '-')]
     forward_metagene_profile = length_strand_profiles[(length, '+')]
     
@@ -70,8 +85,9 @@ def get_metagene_profile_df(length, type_label, length_strand_profiles, upstream
     
     return metagene_profile_df
 
+
 def get_five_prime_ends(bam, progress_bar=True, count=True):
-    """ see func in bam_utils, for rna rf
+    """ see func in bam_utils, for rna
     """
     import tqdm
 
@@ -125,9 +141,8 @@ def get_five_prime_ends(bam, progress_bar=True, count=True):
 def main():
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="This script extracts the metagene profile from reads in a BAM "
-        "file, possibly filtering by length. It attempts to vectorize as many of the "
-        "counting operations as possible.")
+        description="""This script extracts the RNA `metagene profiles' from reads in a BAM file""")
+    
     parser.add_argument('bam', help="The bam file")
     parser.add_argument('orfs', help="The annotated transcripts (bed) file")
     parser.add_argument('out', help="The (output) csv.gz counts file")
@@ -155,16 +170,24 @@ def main():
         help="The number of bases downstream of the translation termination site to end "
         "the metagene profile.")
     
+    slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
     logging_utils.update_logging(args)
-
-    msg = "[extract-metagene-profiles]: {}".format(' '.join(sys.argv))
+    
+    msg = "[extract-rna-profiles]: {}".format(' '.join(sys.argv))
     logger.info(msg)
+    
+    # if using slurm, submit the script
+    if args.use_slurm:
+        cmd = "{}".format(' '.join(shlex.quote(s) for s in sys.argv))
+        slurm.check_sbatch(cmd, args=args)
+        return
 
-    # first, get the 5' ends of the reads (func above)
-    alignment_df = get_five_prime_ends(args.bam, progress_bar=True,
-        count=True)
+    # first, get the 5' ends of the reads 
+    alignment_df = get_five_prime_ends(args.bam, 
+                                       progress_bar=True,
+                                       count=True)
 
     msg = "Reading annotations"
     logger.info(msg)
@@ -290,6 +313,7 @@ def main():
     msg = "Writing metagene profiles to disk"
     logger.info(msg)
     pandas_utils.write_df(all_metagene_profile_dfs, args.out, index=False)
+    
 
 if __name__ == '__main__':
     main()

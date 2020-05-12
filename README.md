@@ -16,6 +16,8 @@ There is currently no documentation available.
 Pinned version of selected dependencies are listed in the `requirements.txt` file for reproducible installation.
 In particular, this requires a running installation of [pbio](https://github.com/dieterich-lab/pybio-utils) and [rpbp](https://github.com/dieterich-lab/rp-bp/tree/1.1.12).
 
+Note: There may be some issues with dependencies if this package is not installed concurrently with `Rp-Bp`!
+
 ### Installation
 
 To install the local VCS project in development mode, use the `--editable` or `-e` option, otherwise
