@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Isoform strategy (Fix reference to `btea`).
 
 ### Added
+- options to `create_bigBed_tracks.py`
 - notebooks
 - match_appris_scores.py, get_psite_count_table.py, get_all_seq_filtering_counts.py (draft scripts only)
 - genome to dge script

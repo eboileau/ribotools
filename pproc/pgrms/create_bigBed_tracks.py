@@ -63,6 +63,13 @@ def _get_bed(input_filename, fields_to_keep, args, pretty_name):
     """
 
     bed_df = bed_utils.get_bed_df(input_filename)
+    
+    msg = "No. of unique features: {}".format(len(bed_df['id'].unique()))
+    logger.info(msg)
+    
+    # first keep only selected ORFs/features
+    if args.id_list is not None:
+        bed_df = bed_df[bed_df['id'].isin(args.id_list)]
 
     # Adjust chrom field
     if args.add_chr:
@@ -77,9 +84,6 @@ def _get_bed(input_filename, fields_to_keep, args, pretty_name):
                               index_col=0, 
                               squeeze=True).to_dict()
         bed_df.replace({"seqname": chr_map}, inplace=True)
-
-    msg = "No. of unique features: {}".format(len(bed_df['id'].unique()))
-    logger.info(msg)
 
     # add display label, if orf_type is found, make sure orf_category is also in fields
     if 'orf_type' in fields_to_keep:
@@ -227,10 +231,18 @@ def main():
     parser.add_argument('-k', '--keep-other', help="""If this flag is present then ORFs labeled
         as "Other" will be included. They are discarded by default.""", action='store_true')
 
+    parser.add_argument('-f', '--filter-by-id', help="""Full path to a list of ORF ids, one per 
+        line without header, to keep in the final set. This can also be a BED12 file, with the
+        "id" field.""", type=str)
+
     parser.add_argument('-a', '--all-replicates', help="""If this flag is present then bigBed files
         are created for all replicates in the config file, in addition to the merged replicates or
-        conditions. By default, only the latter are created.""", action='store_true')
+        conditions. By default, only the latter are created, unless the option [no-merged] is used""", 
+        action='store_true')
 
+    parser.add_argument('--no-merged', help="""If this flag is present then predictions from merged
+        replicates are ignored.""", action='store_true')
+    
     parser.add_argument('--overwrite', help='''If this flag is present, then existing files
         will be overwritten.''', action='store_true')
 
@@ -244,6 +256,10 @@ def main():
     if args.input_list and not args.output_list and args.input_type == 'f':
         logger.critical("Missing [--output-list]")
         return
+    if args.no_merged and not args.all_replicates:
+        logger.warning("""Option [--no-merged] is set without [--all-replicates], setting
+            [--all-replicates] to True.""")
+        args.all_replicates = True
 
     msg = "[create-bigBed-tracks]: {}".format(' '.join(sys.argv))
     logger.info(msg)
@@ -262,17 +278,40 @@ def main():
 
         sample_name_map = ribo_utils.get_sample_name_map(config)
         condition_name_map = ribo_utils.get_condition_name_map(config)
-
+        
+    # check if we filter the list of ORFs
+    args.id_list = None
+    if args.filter_by_id:
+        # check if bed or text file
+        id_list = bed_utils.read_bed(args.filter_by_id)
+        if len(id_list.columns) > 1:
+            try:
+                id_list = id_list.id.unique()
+            except:
+                msg = 'Using [--filter-by-id], but BED12+ file does not contain id field!'
+                logger.critical(msg)
+        else:
+            id_list = set(open(args.filter_by_id).read().split())
+        args.id_list = id_list
+        
     files_only = False
     sample_names = {}
     condition_names = {}
     if args.input_list:
         if args.input_type == 's':
+            logger.warning("""Using --input-type s, setting [--all-replicates] to True, and 
+                ignoring merged replicates.""")
             args.all_replicates = True
+            args.no_merged = True
             sample_names = {name: [name] for name in args.input_list}
         elif args.input_type == 'c':
+            logger.warning("""Using --input-type c, setting [--no-merged] to False, and 
+                ignoring replicates.""")
+            args.all_replicates = False
+            args.no_merged = False
             condition_names = {name: [name] for name in args.input_list}
         else:
+            logger.warning("""Using --input-type f, ignoring replicate options.""")
             files_only = True
     else:
         sample_names = config['riboseq_samples']
@@ -349,7 +388,8 @@ def main():
     reweighting_iterations = config.get('smoothing_reweighting_iterations', None)
 
     if args.all_replicates:
-
+        
+        logger.info("Processing replicates.")
         for name in sorted(sample_names.keys()):
 
             msg = "Processing sample: {}".format(name)
@@ -380,7 +420,11 @@ def main():
             bb = bed_file_name + '.bb'
             _convert(bed, bb, use_config_fields, args)
 
-    # the merged replicates or conditions are always created
+    # the merged replicates or conditions are always created, unless no_merged is set
+    if args.no_merged:
+        return
+    
+    logger.info("Processing merged replicates.")
     lengths = None
     offsets = None
     for name in sorted(condition_names.keys()):
