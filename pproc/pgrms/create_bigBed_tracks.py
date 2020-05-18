@@ -70,6 +70,12 @@ def _get_bed(input_filename, fields_to_keep, args, pretty_name):
     # first keep only selected ORFs/features
     if args.id_list is not None:
         bed_df = bed_df[bed_df['id'].isin(args.id_list)]
+        
+    # filter by p-sites: final list may include ORFs satisfying the criteria,
+    # but not for a given replicate (e.g. >=10 p-sites in 3 replicates, but not
+    # all replicates)
+    if args.filter_by_psites:
+        bed_df = bed_df[bed_df['x_1_sum'] >= args.psite_threshold]
 
     # Adjust chrom field
     if args.add_chr:
@@ -231,9 +237,16 @@ def main():
     parser.add_argument('-k', '--keep-other', help="""If this flag is present then ORFs labeled
         as "Other" will be included. They are discarded by default.""", action='store_true')
 
-    parser.add_argument('-f', '--filter-by-id', help="""Full path to a list of ORF ids, one per 
+    parser.add_argument('-fid', '--filter-by-id', help="""Full path to a list of ORF ids, one per 
         line without header, to keep in the final set. This can also be a BED12 file, with the
         "id" field.""", type=str)
+
+    parser.add_argument('-fps', '--filter-by-psites', help="""If this flag is present then keep ORFs
+        with at least [--psite-threshold] in-frame p-sites.""", action='store_true')
+    
+    parser.add_argument('--psite-threshold', help="""Filter ORF predictions: keep ORFs
+        with at least [--psite-threshold] in-frame p-sites. Silently ignored if [--filter-by-psites]
+        is not set.""", type=int, default=10)
 
     parser.add_argument('-a', '--all-replicates', help="""If this flag is present then bigBed files
         are created for all replicates in the config file, in addition to the merged replicates or
