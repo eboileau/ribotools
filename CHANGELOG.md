@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - `pep_bed6_to_bed12.py` added option
 - `create_rna_profiles.py`, `extract_rna_profiles.py` removed reference to btea, added defaults, using pbio 1.0.0
+- script `create_bigBed_tracks.py` removed, ORF-specific functionalities added to `prep_orf_beds.py` (bed to bigBed format
+conversion moved to `trackhub-utils`)
 
 ### Removed
 - Isoform strategy (Fix reference to `btea`).
