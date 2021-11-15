@@ -200,7 +200,6 @@ def main():
         all_length_distributions_df['name'] = all_length_distributions_df['name'].str.replace(repl, '')
 
     # split into all and unique
-    m_unique = False
     out_files = [args.out + '.csv.gz']
     out_df = []
     if is_unique:
@@ -215,7 +214,8 @@ def main():
         out_files.append(args.out + '-unique.csv.gz')
         out_df.append(unique_read_length_distribution_df)
 
-    all_length_distributions_df = all_length_distributions_df[~m_unique]
+        all_length_distributions_df = all_length_distributions_df[~m_unique]
+    
     all_length_distributions_df['name'] = all_length_distributions_df['name'].apply(lambda x: sample_name_map[x])
     all_length_distributions_df.set_index('name', inplace=True)
     all_length_distributions_df.index.name = 'condition'
