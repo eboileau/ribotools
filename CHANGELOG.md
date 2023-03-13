@@ -1,10 +1,12 @@
 # Change Log
-All notable changes to the `pproc` package will be documented in this file.
+All notable changes to the `ribotools` package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/), 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+Change API to conform to Rp-Bp v3.
 
 ### Changed
 - `pep_bed6_to_bed12.py` added option

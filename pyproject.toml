@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ribotools"
+description = "Ribo-seq analysis tools associated with the Rp-Bp package and more"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Etienne Boileau" }]
+maintainers = [
+  { name = "Etienne Boileau", email = "boileau@uni-heidelberg.de" }
+]
+keywords = [
+  "bioinformatics",
+  "riboseq",
+  "open reading frame discovery",
+  "translation"
+]
+# See https://pypi.python.org/pypi?%3Aaction=list_classifiers
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+]
+dynamic = ["version"]
+requires-python = ">=3.7,<3.11"
+dependencies = [
+  "rpbp>=3.0.1"
+]
+
+[project.scripts]
+get-all-read-length-distributions = ribotools.pgrms.get_all_read_length_distributions:main
+get-all-bam-periodic = ribotools.pgrms.get_all_bam_periodic:main
+create-bigBed-tracks = ribotools.pgrms.create_bigBed_tracks:main
+pep-bed6-to-bed12 = ribotools.pgrms.pep_bed6_to_bed12:main
+get-all-seq-filtering-counts = ribotools.pgrms.get_all_seq_filtering_counts:main
+# htseq_wf
+run-htseq-workflow = ribotools.htseq_wf.run_htseq_workflow:main
+alignment-workflow = ribotools.htseq_wf.alignment_workflow:main
+get-ribo-periodic = ribotools.htseq_wf.get_ribo_periodic:main
+keep-ribo-periodic = ribotools.htseq_wf.keep_ribo_periodic:main
+call-htseq-count = ribotools.htseq_wf.call_htseq_count:main
+# htseq_wf/rnaseq
+create-rna-profiles = ribotools.htseq_wf.rnaseq.create_rna_profiles:main
+extract-rna-profiles = ribotools.htseq_wf.rnaseq.extract_rna_profiles:main
+
+[project.urls]
+Github = "https://github.com/eboileau/ribotools/"
+Issues = "https://github.com/eboileau/ribotools/issues"
+
+[project.optional-dependencies]
+tests = ["pytest", "pytest-cov", "pytest-depends"]
+docs = [
+  "ipykernel",
+  "matplotlib",
+  "nbsphinx",
+  "pandoc",
+  "sphinx>=4.5.0",
+  "sphinx_rtd_theme>=1.0.0",
+  "furo",
+  "sphinx-argparse",
+  "sphinx-copybutton"
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "ribotools.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+log_cli = true
+log_cli_level = "INFO"

@@ -1,5 +1,2 @@
 include README.md
-include LICENSE
-include CHANGELOG.md
 recursive-include scripts *
-recursive-include data *

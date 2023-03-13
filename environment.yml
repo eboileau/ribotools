@@ -1,0 +1,7 @@
+name: ribotools
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - rpbp
