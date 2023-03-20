@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-Change API to conform to Rp-Bp v3.
+## [1.0.0]
+
+### Changed
+
+- API to conform to Rp-Bp v3 (WIP)
 
 ### Changed
 

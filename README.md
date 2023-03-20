@@ -6,13 +6,14 @@ Ribo-seq data processing **under development**.
 
 There is currently no documentation available.
 
-### Prerequisites
-
-Use same environment as [rpbp](https://github.com/dieterich-lab/rp-bp/) - incl. dependencies (install via conda/mamba).
-
 ### Installation
 
-## Uninstallation
+```
+conda env create -f environment.yml
+conda activate ribotools
+git clone https://github.com/eboileau/ribotools.git && cd ribotools
+pip --verbose install -e . 2>&1 | tee install.log
+```
 
 ## Running the tests
 

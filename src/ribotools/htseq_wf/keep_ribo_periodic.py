@@ -91,7 +91,7 @@ def main():
     out_bam.close()
 
     # create the bamtools index if it does not already exists
-    bam_utils.index_bam_file(out_bam, args)
+    bam_utils.index_bam_file(args.out, args)
 
 
 if __name__ == "__main__":
