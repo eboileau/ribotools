@@ -1,20 +1,59 @@
-__pycache__
-*egg-info
-.eggs
+# Byte-compiled, optimized, etc.
+__pycache__/
+*.py[cod]
+*$py.class
 
-*bak
+# C extensions
+*.so
 
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
 .ipynb_checkpoints
 
-dask-worker-space
-
+# Sphinx documentation
 docs/_build/
-docs/_static/
-docs/_templates/
-_build
-_static
-_templates
+docs/build/
+docs/source/_build/
+doc/source/build/
+_readthedocs/
 
+# Local and other files
+/local/
+/data/
 
-local/
-src/
+*pkl
+*bbl
+*blg
+*aux
+*log
+*converted-to.pdf
+*vim
+*swp
+*orig
+*bak
+
+# Environments
+.env
+.venv
+env/
+venv/
+env.bak/
+venv.bak/

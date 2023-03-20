@@ -1,8 +1,0 @@
-# Resort to this option (PEP 517 has no support for direct installs from source),
-# this is to avoid `ERROR: Failed building wheel for ...`.
-# --no-binary :all:
-
-# Pin version of the pbio package and related dependencies:
-git+https://github.com/dieterich-lab/pybio-utils.git@dev#egg=pbio
-# Pin version of the rpbp package and related dependencies:
-git+https://github.com/dieterich-lab/rp-bp.git@dev#egg=rpbp
