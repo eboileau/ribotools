@@ -282,7 +282,7 @@ def main():
     in_files = [without_rrna]
     in_files.extend(pgrm_utils.get_star_index_files(config["star_index"]))
     to_delete = [without_rrna]
-    out_files = [genome_star_bam, genome_sorted_bam]
+    out_files = [genome_sorted_bam]
     file_checkers = {genome_star_bam: bam_utils.check_bam_file}
 
     shell_utils.call_if_not_exists(
@@ -298,7 +298,9 @@ def main():
 
     # rename STAR output to that expected by the pipeline
     genome_star_bam = Path(genome_star_bam)
-    genome_star_bam.replace(genome_sorted_bam)
+    # otherwise assume we already have the right genome_sorted_bam
+    if genome_star_bam.is_file():
+        genome_star_bam.replace(genome_sorted_bam)
 
     # create the bamtools index if it does not already exists
     bam_utils.index_bam_file(genome_sorted_bam, args)

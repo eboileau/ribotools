@@ -14,7 +14,10 @@ import tqdm
 
 import pysam
 
+import pbiotools.utils.bam_utils as bam_utils
 import pbiotools.misc.logging_utils as logging_utils
+
+import ribotools.utils.cl_utils as clu
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +52,13 @@ def main():
         nargs="+",
     )
 
+    parser.add_argument(
+        "--do-not-call",
+        help="Do not execute the program (dry run).",
+        action="store_true",
+    )
+
+    clu.add_file_options(parser)
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
     logging_utils.update_logging(args)
@@ -79,6 +89,9 @@ def main():
             out_bam.write(a)
 
     out_bam.close()
+
+    # create the bamtools index if it does not already exists
+    bam_utils.index_bam_file(out_bam, args)
 
 
 if __name__ == "__main__":
