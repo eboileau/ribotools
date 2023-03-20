@@ -1,7 +1,7 @@
 #!/bin/bash
 ## ========================================================
-## Usage: 
-##      run-dgeRibo-contrasts GENOME CONTRASTS CONFIG DIRLOC 
+## Usage:
+##      run-dgeRibo-contrasts GENOME CONTRASTS CONFIG DIRLOC
 ##
 ## Options:
 ##      GENOME 1=mouse, 2=human, 3=rat
@@ -10,7 +10,7 @@
 ##      CONFIG The yaml config file to pass to the R script
 ##      DIRLOC The output directory to pass to the R script
 ##
-## Description: 
+## Description:
 ##      Run run-dgeRibo-from-htseq.R for all contrasts in CONTRASTS
 ##
 ## Note:
@@ -30,4 +30,4 @@ DIRLOC="$4"
 while IFS=$'\t' read -r num denom
  do
   ./run-dgeRibo-from-htseq.R $GENOME $CONFIG $num $denom $DIRLOC
- done < <(tail -n+2 "$2") 
+ done < <(tail -n+2 "$2")

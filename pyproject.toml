@@ -33,25 +33,16 @@ classifiers = [
 ]
 dynamic = ["version"]
 requires-python = ">=3.7,<3.11"
-dependencies = [
-  "rpbp>=3.0.1"
-]
+dependencies = ["rpbp>=3.0.1", "htseq>=2.0.2"]
 
 [project.scripts]
-get-all-read-length-distributions = ribotools.pgrms.get_all_read_length_distributions:main
-get-all-bam-periodic = ribotools.pgrms.get_all_bam_periodic:main
-create-bigBed-tracks = ribotools.pgrms.create_bigBed_tracks:main
-pep-bed6-to-bed12 = ribotools.pgrms.pep_bed6_to_bed12:main
-get-all-seq-filtering-counts = ribotools.pgrms.get_all_seq_filtering_counts:main
+get-all-bam-periodic = "ribotools.pgrms.get_all_bam_periodic:main"
 # htseq_wf
-run-htseq-workflow = ribotools.htseq_wf.run_htseq_workflow:main
-alignment-workflow = ribotools.htseq_wf.alignment_workflow:main
-get-ribo-periodic = ribotools.htseq_wf.get_ribo_periodic:main
-keep-ribo-periodic = ribotools.htseq_wf.keep_ribo_periodic:main
-call-htseq-count = ribotools.htseq_wf.call_htseq_count:main
-# htseq_wf/rnaseq
-create-rna-profiles = ribotools.htseq_wf.rnaseq.create_rna_profiles:main
-extract-rna-profiles = ribotools.htseq_wf.rnaseq.extract_rna_profiles:main
+run-htseq-workflow = "ribotools.htseq_wf.run_htseq_workflow:main"
+alignment-workflow = "ribotools.htseq_wf.alignment_workflow:main"
+get-ribo-periodic = "ribotools.htseq_wf.get_ribo_periodic:main"
+keep-ribo-periodic = "ribotools.htseq_wf.keep_ribo_periodic:main"
+call-htseq-count = "ribotools.htseq_wf.call_htseq_count:main"
 
 [project.urls]
 Github = "https://github.com/eboileau/ribotools/"

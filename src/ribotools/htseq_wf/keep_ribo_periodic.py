@@ -14,7 +14,7 @@ import tqdm
 
 import pysam
 
-import pbio.misc.logging_utils as logging_utils
+import pbiotools.misc.logging_utils as logging_utils
 
 logger = logging.getLogger(__name__)
 
@@ -29,23 +29,31 @@ def filter_non_periodic_reads(alignments, lengths):
 
 
 def main():
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                     description="""Filter non-periodic read lengths out of 
-        a BAM file, but does not shift the start positions.""")
-    
-    parser.add_argument('bam', help="The (BAM) file to filter.")
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description="""Filter non-periodic read lengths out of
+        a BAM file, but does not shift the start positions.""",
+    )
 
-    parser.add_argument('out', help="The filtered (BAM) file.")
+    parser.add_argument("bam", help="The (BAM) file to filter.")
 
-    parser.add_argument('-l', '--lengths', help="If any values are given, then only reads "
-        "which have those lengths will be included in the final BAM file.", type=int,
-        default=[], nargs='+')
+    parser.add_argument("out", help="The filtered (BAM) file.")
+
+    parser.add_argument(
+        "-l",
+        "--lengths",
+        help="If any values are given, then only reads "
+        "which have those lengths will be included in the final BAM file.",
+        type=int,
+        default=[],
+        nargs="+",
+    )
 
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
     logging_utils.update_logging(args)
 
-    msg = "[keep-ribo-periodic]: {}".format(' '.join(sys.argv))
+    msg = "[keep-ribo-periodic]: {}".format(" ".join(sys.argv))
     logger.info(msg)
 
     msg = "Reading the alignments"
@@ -61,13 +69,17 @@ def main():
     msg = "Filtering the alignments"
     logger.info(msg)
 
-    for a in tqdm.tqdm(filter_non_periodic_reads(alignments, args.lengths),
-                       leave=True, file=sys.stdout, total=num_alignments):
+    for a in tqdm.tqdm(
+        filter_non_periodic_reads(alignments, args.lengths),
+        leave=True,
+        file=sys.stdout,
+        total=num_alignments,
+    ):
         if a is not None:
             out_bam.write(a)
-            
+
     out_bam.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

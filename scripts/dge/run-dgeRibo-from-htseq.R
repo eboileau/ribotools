@@ -17,9 +17,9 @@
 # ---------------------------------------------------------
 
 ## Ribo- and RNA-seq are both filtered independently and ONLY genes where
-## both have non-zero values for ALL replicates are kept.  
+## both have non-zero values for ALL replicates are kept.
 ## Joint normalisation is performed within DESeq, see below for separate normalisation.
-## ** TODO test separate normalisation, relax filter (non-zero ALL), to allow 
+## ** TODO test separate normalisation, relax filter (non-zero ALL), to allow
 ##         Ribo- and/or RNA-"specific" genes
 
 ## Independent filtering using row median (mean is default)
@@ -31,9 +31,9 @@
 ## Ratio of ratios (interaction term) is used to determined if genes are regulated differently
 ## in ribo vs. rna: (ribo/rna)_Trt / (ribo/rna)_Ctrl = (ribo_Trt/ribo_Ctrl) / (rna_Trt/rna_Ctrl).
 ## In the latter, we use LRT to compare the full model to the reduced model to identify significant genes.
-## The p-values are determined by the difference in deviance between the full and reduced model and 
+## The p-values are determined by the difference in deviance between the full and reduced model and
 ## not the LFC. Thus for this term, we only filter based on the "un-shrunken p-values".
-## There are no LFC threshold set. 
+## There are no LFC threshold set.
 
 ## Shrinking done using "ashr".
 
@@ -72,76 +72,76 @@ library(openxlsx)
 write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
 
     ## filter based on the "un-shrunken p-values"
-    
+
     if (shrunken == "shrunken") {
-    
+
         ## interaction
         res.inter.tib <- inter %>%
             data.frame() %>%
             select(log2FoldChange, padj, svalue) %>%
-            dplyr::rename(log2FC.inter = log2FoldChange, 
+            dplyr::rename(log2FC.inter = log2FoldChange,
                 padj.inter = padj,
                 svalue.inter = svalue) %>%
-            rownames_to_column(var="gene") %>% 
+            rownames_to_column(var="gene") %>%
             as_tibble()
-   
+
         ## ribo
         res.ribo.tib <- ribo %>%
             data.frame() %>%
             select(log2FoldChange, padj, svalue) %>%
-            dplyr::rename(log2FC.ribo = log2FoldChange, 
+            dplyr::rename(log2FC.ribo = log2FoldChange,
                 padj.ribo = padj,
                 svalue.ribo = svalue) %>%
-            rownames_to_column(var="gene") %>% 
+            rownames_to_column(var="gene") %>%
             as_tibble()
 
         ## rna
         res.rna.tib <- rna %>%
             data.frame() %>%
             select(log2FoldChange, padj, svalue) %>%
-            dplyr::rename(log2FC.rna = log2FoldChange, 
+            dplyr::rename(log2FC.rna = log2FoldChange,
                 padj.rna = padj,
                 svalue.rna = svalue) %>%
-            rownames_to_column(var="gene") %>% 
+            rownames_to_column(var="gene") %>%
             as_tibble()
-  
+
     } else{
-    
+
         ## interaction
         res.inter.tib <- inter %>%
             data.frame() %>%
             select(log2FoldChange, padj) %>%
-            dplyr::rename(log2FC.inter = log2FoldChange, 
+            dplyr::rename(log2FC.inter = log2FoldChange,
                 padj.inter = padj) %>%
-            rownames_to_column(var="gene") %>% 
+            rownames_to_column(var="gene") %>%
             as_tibble()
 
         ## ribo
         res.ribo.tib <- ribo %>%
             data.frame() %>%
             select(log2FoldChange, padj) %>%
-            dplyr::rename(log2FC.ribo = log2FoldChange, 
+            dplyr::rename(log2FC.ribo = log2FoldChange,
                 padj.ribo = padj) %>%
-            rownames_to_column(var="gene") %>% 
+            rownames_to_column(var="gene") %>%
             as_tibble()
 
         ## rna
         res.rna.tib <- rna %>%
             data.frame() %>%
             select(log2FoldChange, padj) %>%
-            dplyr::rename(log2FC.rna = log2FoldChange, 
+            dplyr::rename(log2FC.rna = log2FoldChange,
                 padj.rna = padj) %>%
-            rownames_to_column(var="gene") %>% 
+            rownames_to_column(var="gene") %>%
             as_tibble()
 
     }
-    
+
     ## add raw counts, annotations and re-order columns
     cts <- counts(dds, normalized=FALSE) %>%
-        data.frame() %>%    
-        rownames_to_column(var="gene") %>% 
+        data.frame() %>%
+        rownames_to_column(var="gene") %>%
         as_tibble()
-    
+
     # # nromalised and/or cpm?
     # c <- counts(dds.simple, normalized=F)
     # c <- cpm(c)
@@ -150,37 +150,37 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
     means <- ribo %>%
         data.frame() %>%
         select(baseMean) %>%
-        rownames_to_column(var="gene") %>% 
+        rownames_to_column(var="gene") %>%
         as_tibble()
-        
-    res <- res.inter.tib %>% 
-        full_join(res.ribo.tib, by="gene") %>% 
-        full_join(res.rna.tib, by="gene") %>% 
+
+    res <- res.inter.tib %>%
+        full_join(res.ribo.tib, by="gene") %>%
+        full_join(res.rna.tib, by="gene") %>%
         left_join(means, by="gene")
-        
+
     # <- Reduce(function(x,y) merge(x, y, by = "gene", all.x = TRUE, all.y = TRUE),
     # list(res.inter.tib, res.ribo.tib, res.rna.tib))
     # <- merge(tata, by = "gene", all.x = TRUE, all.y = FALSE)
-    
+
     res <- res %>%
       dplyr::filter((padj.inter < alpha.set) | (padj.ribo < alpha.set & abs(log2FC.ribo) > lfcThreshold.set) | (padj.rna < alpha.set & abs(log2FC.rna) > lfcThreshold.set))
-    
+
     res$symbol <- map_ids(genome, res$gene)
-    
+
     if (shrunken == "shrunken") {
-    
-        res <- res %>% 
+
+        res <- res %>%
             select(gene, symbol, baseMean, log2FC.inter, padj.inter, svalue.inter, log2FC.ribo, padj.ribo, svalue.ribo, log2FC.rna, padj.rna, svalue.rna)
-            
+
     } else {
-        res <- res %>% 
+        res <- res %>%
             select(gene, symbol, baseMean, log2FC.inter, padj.inter, log2FC.ribo, padj.ribo, log2FC.rna, padj.rna)
-            
+
     }
-    
+
     # add counts
     res <- res %>% left_join(cts, by="gene")
-    
+
     ## write to disk, add size factors for reference
     wb <- createWorkbook()
 
@@ -188,15 +188,15 @@ write_results <- function(dds, inter, ribo, rna, num, denom, shrunken, genome) {
     writeDataTable(wb, sheet=1, x=res)
 
     addWorksheet(wb, sheetName="sizeFactors")
-    
+
     sf <- dds$sizeFactor %>%
-        data.frame() %>%    
-        rownames_to_column(var="sample") %>% 
+        data.frame() %>%
+        rownames_to_column(var="sample") %>%
         dplyr::rename(sizeFactor = ".") %>%
         as_tibble()
-            
+
     writeDataTable(wb, sheet=2, x= sf)
-    
+
     if (shrunken == "shrunken") {
         filen <- paste0("condition_", num, "_vs_", denom, "_shrunken.xlsx", sep="")
         filen <- file.path(dirloc.out, filen, fsep=.Platform$file.sep)
@@ -240,7 +240,7 @@ tmp.loc <- "tmp"
 dirloc.tmp <- file.path(dirloc.out, tmp.loc, fsep=.Platform$file.sep)
 dir.create(dirloc.tmp)
 
-# first use separate locations, this is easier, then 
+# first use separate locations, this is easier, then
 # link all files to base.loc, remove afterwards.
 
 dirloc.ribo <- params$riboseq_data
@@ -257,27 +257,27 @@ rna.files <- list.files(dirloc.rna)
 # We could do all in one run, and subset the results using contrast...
 ## TODO do not call each contrast separately...
 
-rna.table <- params$rnaseq_sample_name_map %>% 
-    data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>% 
+rna.table <- params$rnaseq_sample_name_map %>%
+    data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>%
     dplyr::rename(sampleName = ".")
 
-rna.table <- rna.table %>% 
+rna.table <- rna.table %>%
     rowwise() %>% mutate(fileName=rna.files[grep(sampleName, rna.files)])
 
-rna.table$assay <- 'rna' 
+rna.table$assay <- 'rna'
 rna.table$condition <- NA
 rna.table$condition[grep(num, rna.table$sampleName, fixed=TRUE)] <- num
 rna.table$condition[grep(denom, rna.table$sampleName, fixed=TRUE)] <- denom
 
 
-ribo.table <- params$riboseq_sample_name_map %>% 
-    data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>% 
+ribo.table <- params$riboseq_sample_name_map %>%
+    data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>%
     dplyr::rename(sampleName = ".")
 
-ribo.table <- ribo.table %>% 
+ribo.table <- ribo.table %>%
     rowwise() %>% mutate(fileName=ribo.files[grep(sampleName, ribo.files)])
 
-ribo.table$assay <- 'ribo' 
+ribo.table$assay <- 'ribo'
 ribo.table$condition <- NA
 ribo.table$condition[grep(num, ribo.table$sampleName, fixed=TRUE)] <- num
 ribo.table$condition[grep(denom, ribo.table$sampleName, fixed=TRUE)] <- denom
@@ -354,23 +354,23 @@ ddsHTSeq <- ddsHTSeq[idx,]
 ddsHTSeq.reduced <- DESeq(ddsHTSeq, test="LRT", reduced=~assay+condition)
 
 ## main effect of condition on rna counts (interaction terms for base levels are absorbed by the intercept)
-    
+
 res.rna <- results(ddsHTSeq.reduced,
                    contrast=c("condition", num, denom),
-                   lfcThreshold=lfcThreshold.set, 
+                   lfcThreshold=lfcThreshold.set,
                    altHypothesis=altHypothesis.set,
                    alpha=alpha.set,
                    filterFun=ihw,
                    filter=rowMedians(counts(ddsHTSeq.reduced)), # comment for default independent filtering (mean)
                    test="Wald")
-                        
+
 res.rna$padj[is.na(res.rna$padj)] <- 1
 
 ## effect of condition on ribo counts: condition_Trt_vs_Ctrl + assayribo.conditionTrt
-                
+
 res.ribo <- results(ddsHTSeq.reduced,
                     contrast=list(c(resultsNames(ddsHTSeq.reduced)[3],resultsNames(ddsHTSeq.reduced)[4])),
-                    lfcThreshold=lfcThreshold.set, 
+                    lfcThreshold=lfcThreshold.set,
                     altHypothesis=altHypothesis.set,
                     alpha=alpha.set,
                     filterFun=ihw,
@@ -379,10 +379,10 @@ res.ribo <- results(ddsHTSeq.reduced,
 
 res.ribo$padj[is.na(res.ribo$padj)] <- 1
 
-## interaction: condition effect across assays, i.e. how different is the response 
+## interaction: condition effect across assays, i.e. how different is the response
 ## from ribo vs. rna counts with treatment: (ribo/rna)_Trt / (ribo/rna)_Ctrl = (ribo_Trt/ribo_Ctrl) / (rna_Trt/rna_Ctrl)
 
-## we cannot set lfc threshold 
+## we cannot set lfc threshold
 res.inter <- results(ddsHTSeq.reduced,
                      name=resultsNames(ddsHTSeq.reduced)[4],
                      alpha=alpha.set,
@@ -403,7 +403,7 @@ res.inter$padj[is.na(res.inter$padj)] <- 1
 ## with "ashr", we cannot use lfcThreshold
 ## write s-values, but only use p-values
 
-res.rna.shrunken <- lfcShrink(ddsHTSeq.reduced, 
+res.rna.shrunken <- lfcShrink(ddsHTSeq.reduced,
                               contrast=c("condition", num, denom), # coef=resultsNames(ddsHTSeq.reduced)[2]
                               res=res.rna,
                               type="ashr",
@@ -412,17 +412,17 @@ res.rna.shrunken <- lfcShrink(ddsHTSeq.reduced,
 res.rna.shrunken$padj <- res.rna$padj
 res.rna.shrunken$pvalue <- res.rna$pvalue
 
-res.ribo.shrunken <- lfcShrink(ddsHTSeq.reduced, 
-                               contrast=list(c(resultsNames(ddsHTSeq.reduced)[3],resultsNames(ddsHTSeq.reduced)[4])), 
+res.ribo.shrunken <- lfcShrink(ddsHTSeq.reduced,
+                               contrast=list(c(resultsNames(ddsHTSeq.reduced)[3],resultsNames(ddsHTSeq.reduced)[4])),
                                res=res.ribo,
                                type="ashr",
                                svalue=TRUE)
-                                
+
 res.ribo.shrunken$padj <- res.ribo$padj
 res.ribo.shrunken$pvalue <- res.ribo$pvalue
 
-res.inter.shrunken <- lfcShrink(ddsHTSeq.reduced, 
-                                coef=resultsNames(ddsHTSeq.reduced)[4], 
+res.inter.shrunken <- lfcShrink(ddsHTSeq.reduced,
+                                coef=resultsNames(ddsHTSeq.reduced)[4],
                                 res=res.inter,
                                 type="ashr",
                                 svalue=TRUE)
@@ -430,7 +430,7 @@ res.inter.shrunken <- lfcShrink(ddsHTSeq.reduced,
 res.inter.shrunken$padj <- res.inter$padj
 res.inter.shrunken$pvalue <- res.inter$pvalue
 
-## Glimma, only for the interaction, but write all results to disk     
+## Glimma, only for the interaction, but write all results to disk
 
 res.inter.shrunken$symbol <- map_ids(genome, rownames(res.inter.shrunken))
 is.de <- as.numeric(res.inter.shrunken$padj < alpha.set)
@@ -440,37 +440,36 @@ anno <- data.frame(GeneID=rownames(res.inter.shrunken), symbol=res.inter.shrunke
 ## side plot: average of the counts normalized by size factor on y-axis [counts(dds ,normalized=TRUE)]
 ## if transform = TRUE, as.matrix(edgeR::cpm(counts, log=TRUE))
 
-glMDPlot(res.inter.shrunken, 
+glMDPlot(res.inter.shrunken,
          counts=counts(ddsHTSeq.reduced ,normalized=TRUE),
          anno, # anno
          ddsHTSeq.reduced$condition, # groups
-         samples=colnames(ddsHTSeq.reduced), 
-         status=is.de, 
+         samples=colnames(ddsHTSeq.reduced),
+         status=is.de,
          transform = FALSE,
          xlab = "logMeanExpr",
          ylab = "log2FoldChange",
          side.ylab = "NormalizedCount",
-         path=dirloc.out, 
-         folder=paste("glimma-plots_", num, "_vs_", denom, "_", resultsNames(ddsHTSeq.reduced)[4], sep=""), 
+         path=dirloc.out,
+         folder=paste("glimma-plots_", num, "_vs_", denom, "_", resultsNames(ddsHTSeq.reduced)[4], sep=""),
          launch=FALSE)
 
 
 ## xlsx file: both shrunken and not
 write_results(ddsHTSeq.reduced,
-              res.inter, 
-              res.ribo, 
+              res.inter,
+              res.ribo,
               res.rna,
-              num, 
-              denom, 
+              num,
+              denom,
               "",
               genome)
-                
-write_results(ddsHTSeq.reduced, 
-              res.inter.shrunken, 
-              res.ribo.shrunken, 
+
+write_results(ddsHTSeq.reduced,
+              res.inter.shrunken,
+              res.ribo.shrunken,
               res.rna.shrunken,
-              num, 
-              denom, 
+              num,
+              denom,
               "shrunken",
               genome)
-              

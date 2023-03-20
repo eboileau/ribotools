@@ -20,9 +20,8 @@ Use same environment as [rpbp](https://github.com/dieterich-lab/rp-bp/) - incl. 
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags).
 
 ## Authors
 
 Some scripts are adapted from the [Rp-Bp](https://github.com/dieterich-lab/rp-bp), authored by Brandon Malone, developed/maintained by Etienne Boileau.
-
