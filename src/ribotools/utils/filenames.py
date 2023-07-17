@@ -50,7 +50,7 @@ def get_rnaseq_bam(rnaseq_base, name, **kwargs):
 def get_rnaseq_bam_path(base_path):
     return os.path.join(
         base_path,
-        "mapping",
+        "without-rrna-mapping",
     )
 
 
@@ -67,11 +67,11 @@ def get_without_adapters_fastq(base_path, name, note=None):
 
 
 def get_with_rrna_fastq(base_path, name, note=None):
-    return filenames.get_with_rrna_fastq(base_path, name, note=None)
+    return filenames.get_with_rrna_fastq(base_path, name, note=note)
 
 
 def get_without_rrna_fastq(base_path, name, note=None):
-    return filenames.get_without_rrna_fastq(base_path, name, note=None)
+    return filenames.get_without_rrna_fastq(base_path, name, note=note)
 
 
 def get_gtf(config):

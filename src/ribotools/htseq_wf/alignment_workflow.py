@@ -13,7 +13,7 @@ Note* Bowtie 2 and STAR indices must already be available.
       from the rpbp package.
 """
 
-import os
+
 import sys
 import argparse
 import logging
@@ -53,7 +53,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="""Wrapper script for a general RNA- or
         Ribo-Seq workflow: flexbar -> bowtie2 -> STAR. File names and directory structures
-        follow the conventions used in Rp-Bp.""",
+        follow the nomenclature used in Rp-Bp.""",
     )
 
     parser.add_argument("seq", choices=["rna", "ribo"])
@@ -120,6 +120,7 @@ def main():
     ]
 
     # only for RNA if using [trim-rna-to-max-fragment-size]
+    # NOTE: this is used for the BAM output, but not in Flexbar/Bowtie2 output!
     filename_length = None
 
     if args.seq == "rna":
@@ -142,20 +143,24 @@ def main():
             is_unique_ribo = not ("keep_riboseq_multimappers" in ribo_config)
 
             matching_ribo_sample = config["matching_samples"][args.name]
-
-            # get the lengths, we don't need the offsets
-            lengths, _ = ribo_utils.get_periodic_lengths_and_offsets(
-                ribo_config,
-                matching_ribo_sample,
-                is_unique=is_unique_ribo,
-                default_params=metagene_options,
-            )
-
-            if len(lengths) == 0:
-                msg = """No periodic read lengths were found, but the
-                                [trim-rna-to-max-fragment-size] option was given!"""
-                logger.critical(msg)
-                return
+            try:
+                # get the lengths, we don't need the offsets
+                lengths, _ = ribo_utils.get_periodic_lengths_and_offsets(
+                    ribo_config,
+                    matching_ribo_sample,
+                    is_unique=is_unique_ribo,
+                    default_params=metagene_options,
+                )
+                if len(lengths) == 0:
+                    msg = """No periodic read lengths were found, but the
+                             [trim-rna-to-max-fragment-size] option was given!"""
+                    logger.critical(msg)
+                    return
+            except:
+                # presumably missing Ribo-seq sample
+                # name: !!int value is given
+                lengths = []
+                lengths.append(matching_ribo_sample)
 
             max_length = max([int(l) for l in lengths])
             filename_length = max_length
@@ -249,7 +254,7 @@ def main():
     # (3) Run STAR to align rRNA-depleted reads to the genome.
     # -------------------------------------------------------
     genome_star_bam = "{}{}".format(star_output_prefix, "Aligned.sortedByCoord.out.bam")
-    # Rp-Bp file name
+    # constructed file name
     genome_sorted_bam = filenames.get_seq_bam(
         args.seq, seq_data, args.name, length=filename_length, note=note
     )
@@ -282,9 +287,10 @@ def main():
     in_files = [without_rrna]
     in_files.extend(pgrm_utils.get_star_index_files(config["star_index"]))
     to_delete = [without_rrna]
+    # we should not check for genome_star_bam, else it will not run if
+    # we want to start from existing alignements...?
     out_files = [genome_sorted_bam]
     file_checkers = {genome_star_bam: bam_utils.check_bam_file}
-
     shell_utils.call_if_not_exists(
         cmd,
         out_files,
@@ -298,9 +304,23 @@ def main():
 
     # rename STAR output to that expected by the pipeline
     genome_star_bam = Path(genome_star_bam)
-    # otherwise assume we already have the right genome_sorted_bam
+    # otherwise check and replace
     if genome_star_bam.is_file():
-        genome_star_bam.replace(genome_sorted_bam)
+        if not Path(genome_sorted_bam).is_file() or args.overwrite:
+            genome_star_bam.replace(genome_sorted_bam)
+            msg = f"Replacing {genome_star_bam.as_posix()} by {genome_sorted_bam}"
+            logger.info(msg)
+        else:
+            msg = (
+                f"Both files {genome_star_bam.as_posix()} and {genome_sorted_bam} "
+                f"already exist! You should re-run using [--overwrite] to avoid "
+                f"data corruption!"
+            )
+            logger.error(msg)
+    else:
+        # re-run w/o overwrite
+        msg = f"The file {genome_sorted_bam} already exists. Continuing..."
+        logger.warning(msg)
 
     # create the bamtools index if it does not already exists
     bam_utils.index_bam_file(genome_sorted_bam, args)

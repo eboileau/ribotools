@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
+
 """Helper script to submit a set of RNA- and/or Ribo-seq
-samples for alignment and quantification (HTSeq).
+samples for alignment and abundance quantification (using HTSeq).
 
 Note* Example workflow: Submit Ribo-seq samples for
       mapping and periodicity estimation (or else use
