@@ -1,28 +1,17 @@
-# Description
+# Ribotools
 
-Ribo-seq data processing **under development**.
+**Ribotools**, an _add-on_ to [Rp-Bp](http://rp-bp.readthedocs.io/en/latest/), is a toolbox for the analysis of matched ribosome profiling (Ribo-seq) and RNA sequencing (RNA-seq) data.
 
-## Getting Started
+**Ribotools** can be used to generate count tables, starting from raw, trimmed reads, or existing alignments, taking into consideration Ribo-seq periodicity estimates and RNA-seq fragment length. **Ribotools** include scripts to perform translation efficiency (TE) analysis, accommodating for sample-to-sample variance, complex experimental designs, or confounding factors, and classifies features into different regulatory layers.
 
-There is currently no documentation available.
+## Documentation
 
-### Installation
+Consult the [user guide]() for instructions on how to install the package and detailed usage instructions.
 
-```
-conda env create -f environment.yml
-conda activate ribotools
-git clone https://github.com/eboileau/ribotools.git && cd ribotools
-pip --verbose install -e . 2>&1 | tee install.log
-```
+## How to report issues
 
-## Running the tests
+For bugs, issues, or feature requests, use the [bug tracker](https://github.com/eboileau/ribotools/issues). Follow the instructions and guidelines given in the templates.
 
-## Contributing
+## License
 
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags).
-
-## Authors
-
-Some scripts are adapted from the [Rp-Bp](https://github.com/dieterich-lab/rp-bp), authored by Brandon Malone, developed/maintained by Etienne Boileau.
+The MIT License (MIT). Copyright (c) 2019 Etienne Boileau.
