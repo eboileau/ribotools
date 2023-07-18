@@ -2,6 +2,11 @@ import os
 import rpbp.ribo_utils.filenames as filenames
 
 
+class _return_key_dict(dict):
+    def __missing__(self, key):
+        return key
+
+
 def get_stranded_library_string(stranded):
     s = ""
     if (stranded is not None) and (stranded in ["fr", "rf"]):
@@ -87,3 +92,15 @@ def get_count_table(seq_base, name, length=None, is_unique=False, note=None):
     fn = "".join([name, note_str, unique_str, length_str, ".tsv"])
 
     return os.path.join(seq_base, "count-tables", fn)
+
+
+def get_sample_name_map(config, seq):
+
+    sample_name_map = _return_key_dict()
+    key = "riboseq_sample_name_map"
+    if seq == "rna":
+        key = "rnaseq_sample_name_map"
+    if key in config:
+        sample_name_map.update(config[key])
+
+    return sample_name_map

@@ -95,7 +95,7 @@ def main():
     keep_delete_files = args.keep_intermediate_files or args.do_not_call
 
     config = yaml.load(open(args.config), Loader=yaml.FullLoader)
-    sample_name_map = ribo_utils.get_sample_name_map(config)
+    sample_name_map = filenames.get_sample_name_map(config, args.seq.lower())
     note = config.get("note", None)
 
     keep_key = "keep_" + str(args.seq) + "seq_multimappers"
