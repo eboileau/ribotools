@@ -6,3 +6,13 @@ channels:
 dependencies:
   - rpbp
   - htseq
+  - r-base=4.2.3
+  - r-r.utils
+  - r-devtools
+  - r-tidyverse
+  - r-openxlsx
+  - r-yaml
+  - r-ashr
+  - bioconductor-ihw
+  - bioconductor-apeglm
+  - bioconductor-deseq2
