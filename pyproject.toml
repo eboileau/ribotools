@@ -37,6 +37,7 @@ dependencies = ["rpbp>=3.0.1", "htseq>=2.0.2"]
 
 [project.scripts]
 get-all-bam-periodic = "ribotools.pgrms.get_all_bam_periodic:main"
+get-gtf-from-predictions = "ribotools.pgrms.get_gtf_from_predictions:main"
 # htseq_wf
 run-htseq-workflow = "ribotools.htseq_wf.run_htseq_workflow:main"
 alignment-workflow = "ribotools.htseq_wf.alignment_workflow:main"
