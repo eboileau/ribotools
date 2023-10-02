@@ -63,6 +63,15 @@ def main():
         default=None,
     )
 
+    parser.add_argument(
+        "--gtf",
+        help="""A different GTF file for abundance estimation, e.g. the output
+        of get-gtf-from-predictions (Ribo-seq ORFs). This is passed to
+        htseq-count and overrides the GTF file from the config.""",
+        type=str,
+        dest="htseq_gtf",
+    )
+
     clu.add_file_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     logging_utils.add_logging_options(parser)
@@ -166,7 +175,10 @@ def main():
     # all options to htseq-count
     htseq_options_str = pgrm_utils.get_final_args(htseq_options, args.htseq_options)
 
-    gtf_file = filenames.get_gtf(config)
+    if args.htseq_gtf:
+        gtf_file = args.htseq_gtf
+    else:
+        gtf_file = filenames.get_gtf(config)
 
     cmd = "{} {} {} {} > {}".format(
         htseq_executable, htseq_options_str, bam_file, gtf_file, count_file

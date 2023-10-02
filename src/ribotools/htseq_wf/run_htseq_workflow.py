@@ -114,6 +114,15 @@ def main():
         type=str,
     )
 
+    parser.add_argument(
+        "--gtf",
+        help="""A different GTF file for abundance estimation, e.g. the output
+        of get-gtf-from-predictions (Ribo-seq ORFs). This is passed to
+        htseq-count and overrides the GTF file from the config.""",
+        type=str,
+        dest="htseq_gtf",
+    )
+
     clu.add_file_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     logging_utils.add_logging_options(parser)
@@ -143,6 +152,9 @@ def main():
     star_str = pgrm_utils.get_star_options_string(args)
     flexbar_str = pgrm_utils.get_flexbar_options_string(args)
     htseq_str = clu.get_htseq_options_string(args)
+    htseq_gtf_str = ""
+    if args.htseq_gtf:
+        htseq_gtf_str = "--gtf {}".format(args.htseq_gtf)
     tmp_str = ""
 
     # handle do_not_call so that we do call the pipeline script, but that it does not run anything
@@ -235,7 +247,7 @@ def main():
         # run htseq-count
         for sample_name in config["riboseq_samples"].keys():
 
-            cmd = "call-htseq-count {} {} {} {} {} {} {} {}".format(
+            cmd = "call-htseq-count {} {} {} {} {} {} {} {} {}".format(
                 args.seq,
                 args.config,
                 sample_name,
@@ -244,6 +256,7 @@ def main():
                 slurm_str,
                 htseq_str,
                 not_periodic_str,
+                htseq_gtf_str,
             )
 
             job_id = [
@@ -337,7 +350,7 @@ def main():
         # run htseq-count
         for sample_name in config["rnaseq_samples"].keys():
 
-            cmd = "call-htseq-count {} {} {} {} {} {} {} {}".format(
+            cmd = "call-htseq-count {} {} {} {} {} {} {} {} {}".format(
                 args.seq,
                 args.config,
                 sample_name,
@@ -346,6 +359,7 @@ def main():
                 slurm_str,
                 htseq_str,
                 ribo_cfg_str,
+                htseq_gtf_str,
             )
 
             job_id = [job_ids_mapping[sample_name]]
