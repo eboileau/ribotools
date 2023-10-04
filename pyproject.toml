@@ -36,6 +36,7 @@ requires-python = ">=3.7,<3.11"
 dependencies = ["rpbp>=3.0.1", "htseq>=2.0.2"]
 
 [project.scripts]
+# programs
 get-all-bam-periodic = "ribotools.pgrms.get_all_bam_periodic:main"
 get-gtf-from-predictions = "ribotools.pgrms.get_gtf_from_predictions:main"
 # htseq_wf
@@ -44,6 +45,10 @@ alignment-workflow = "ribotools.htseq_wf.alignment_workflow:main"
 get-ribo-periodic = "ribotools.htseq_wf.get_ribo_periodic:main"
 keep-ribo-periodic = "ribotools.htseq_wf.keep_ribo_periodic:main"
 call-htseq-count = "ribotools.htseq_wf.call_htseq_count:main"
+
+# TEA
+[tool.setuptools]
+script-files = ["scripts/get-sample-table", "scripts/run-tea"]
 
 [project.urls]
 Github = "https://github.com/eboileau/ribotools/"

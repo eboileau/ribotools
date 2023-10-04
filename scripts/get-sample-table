@@ -1,9 +1,7 @@
 #! /usr/bin/env Rscript
 
-# Usage: ./pre-sample-table.R [YAML] [OUTPUT] <CONDITIONS>
-# 1: [YAML]       Yaml config file (same as used for run-htseq-workflow)
-# 2. [OUTPUT]     Output directory (created if does not exist)
-# 3. <CONDITIONS> Comma-separated list of conditions
+# Usage: get-sample-table [-config CONFIG]
+# [-config CONFIG] Yaml config file (same as used for run-htseq-workflow)
 
 library(yaml)
 library(dplyr)
@@ -14,15 +12,19 @@ base.loc <- "count-tables"
 ## I/O
 
 # arguments
-args <- commandArgs(trailingOnly=TRUE)
-if (length(args)<2) { stop("./pre-sample-table.R [YAML] [OUTPUT] <CONDITIONS>\n", call.=FALSE) }
+defaults <- list(config=NULL)
+args <- R.utils::commandArgs(trailingOnly=TRUE, asValues=TRUE, defaults=defaults)
+if (is.null(args$config)) {
+    stop("get-sample-table [-config CONFIG]\n",
+         call.=FALSE)
+}
 # config file
-params <- yaml::read_yaml(args[1])
+params <- yaml::read_yaml(args$config)
 # output directory
-dirloc.out <- args[2]
+dirloc.out <- params$tea_data
 created <- ifelse(!dir.exists(dirloc.out), dir.create(dirloc.out, recursive=TRUE), FALSE)
 if (!created) { print(paste("Using existing directory ", dirloc.out, " ...", sep="")) }
-if (length(args)>2) { conditions <- unique(unlist(strsplit(args[3], ","))) }
+conditions <- unique(unlist(params$contrast))
 
 ## Call
 
@@ -61,5 +63,12 @@ used <- lapply(conditions, function(c) {ribo.table$condition[grep(c, ribo.table$
 sampleTable <- bind_rows(ribo.table, rna.table)
 
 project <- ""
-if (!is.null(params$project_name)) { project <- params$project_name }
-write.csv(sampleTable, file=file.path(dirloc.out, paste0("sample-table-", project, ".csv"), fsep=.Platform$file.sep), row.names=FALSE)
+if (!is.null(params$project_name)) {
+    project <- params$project_name
+    project <- paste0("-", project)
+}
+write.csv(sampleTable,
+          file=file.path(dirloc.out, paste0("sample-table", project, ".csv"),
+          fsep=.Platform$file.sep),
+          row.names=FALSE,
+          quote=FALSE)
