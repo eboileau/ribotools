@@ -16,4 +16,5 @@ Introduction
 
    getting-started
    user-guide
+   estimate-te
 ..    installation

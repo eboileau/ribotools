@@ -1,11 +1,12 @@
 #! /usr/bin/env Rscript
 
-# Usage: run-tea [-config CONFIG] <-samples TABLE> <-method LRT/deltaTE> <-batch> <-filter>
+# Usage: run-tea [-config CONFIG] <-method LRT/deltaTE> <-lfcThreshold L2F> <-alpha ALPHA> <-batch> <-filter>
 # 1. [-config CONFIG]      Yaml config file (same as used for run-htseq-workflow)
-# 2: [-sample TABLE]       Sample table (CSV) - overwrites default
-# 3. <-method LRT/deltaTE> Method to use (default LRT)
-# 4. <-batch>              If present, uses "batch" from sample table
-# 5. <-filter>             If present, filter features with 0 counts in each assay separately
+# 2. <-method LRT/deltaTE> Method to use - default LRT
+# 3. <-lfcThreshold L2F>   LFC threshold - default log2(1.2)
+# 4. <-alpha ALPHA>        FDR threshold - default 0.05
+# 5. <-batch>              If present, uses "batch" from sample table
+# 6. <-filter>             If present, filter features with 0 counts in each assay separately
 
 library(yaml)
 library(DESeq2)
@@ -41,19 +42,15 @@ run_analysis_fit_sub_lrt <- function(contrast, coldata, dds, model) {
     # fit the model
     dds.sub <- DESeq(dds.sub, test="LRT", reduced=model)
 
-    coefs <- tail(resultsNames(dds.sub), 2)
-    print(resultsNames(dds.sub))
-    print(paste("Testing for: ", coefs, sep=""))
-    print(paste("@ lfcThreshold: ", lfcThreshold.set, sep=""))
-    print(paste("@ alpha: ", alpha.set, sep=""))
-
     ## use lfcShrink
     ## use "ashr" instead of "apeglm", which only takes coef (unless we rewrite the design...)
     ## with "ashr", we cannot use lfcThreshold
 
     ## main effect of condition on rna counts (interaction terms for base levels are absorbed by the intercept)
+    coef <- resultsNames(dds.sub)[3] # contrast=c("condition", num, denom)
+    print(paste0("RNA - Testing for: ", coef, " @ lfcThreshold: ", lfcThreshold.set, " and alpha: ", alpha.set))
     res.rna <- results(dds.sub,
-                       name=resultsNames(dds.sub)[3], # contrast=c("condition", num, denom),
+                       name=coef,
                        lfcThreshold=lfcThreshold.set,
                        altHypothesis=altHypothesis.set,
                        alpha=alpha.set,
@@ -62,13 +59,15 @@ run_analysis_fit_sub_lrt <- function(contrast, coldata, dds, model) {
                        test="Wald")
     res.rna$padj[is.na(res.rna$padj)] <- 1
     res.rna <- lfcShrink(dds.sub,
-                         coef=resultsNames(dds.sub)[3], #contrast=c("condition", num, denom)
+                         coef=coef,
                          res=res.rna,
                          type="ashr")
 
     ## effect of condition on ribo counts: condition_Trt_vs_Ctrl + assayribo.conditionTrt
+    coef <- list(c(resultsNames(dds.sub)[3], resultsNames(dds.sub)[4]))
+    print(paste0("Ribo - Testing for: ", coef, " @ lfcThreshold: ", lfcThreshold.set, " and alpha: ", alpha.set))
     res.ribo <- results(dds.sub,
-                        contrast=list(c(resultsNames(dds.sub)[3], resultsNames(dds.sub)[4])),
+                        contrast=coef,
                         lfcThreshold=lfcThreshold.set,
                         altHypothesis=altHypothesis.set,
                         alpha=alpha.set,
@@ -76,7 +75,7 @@ run_analysis_fit_sub_lrt <- function(contrast, coldata, dds, model) {
                         test="Wald")
     res.ribo$padj[is.na(res.ribo$padj)] <- 1
     res.ribo <- lfcShrink(dds.sub,
-                          contrast=list(c(resultsNames(dds.sub)[3], resultsNames(dds.sub)[4])),
+                          contrast=coef,
                           res=res.ribo,
                           type="ashr")
 
@@ -84,6 +83,7 @@ run_analysis_fit_sub_lrt <- function(contrast, coldata, dds, model) {
     ## from ribo vs. rna counts with treatment: (ribo/rna)_Trt / (ribo/rna)_Ctrl = (ribo_Trt/ribo_Ctrl) / (rna_Trt/rna_Ctrl)
 
     ## we cannot set lfc threshold, use of name=resultsNames(dds.sub)[4] is useless, i.e. ignores contrast for the p-value calculation
+    print(paste0("Testing for interaction (LRT) @ alpha: ", alpha.set))
     res.inter <- results(dds.sub,
                         alpha=alpha.set)
     res.inter$padj[is.na(res.inter$padj)] <- 1
@@ -123,15 +123,11 @@ run_analysis_fit_sub_deltaTE <- function(contrast, coldata, dds, model) {
     # fit the model
     dds.sub <- DESeq(dds.sub)
 
-    coefs <- tail(resultsNames(dds.sub), 2)
-    print(resultsNames(dds.sub))
-    print(paste("Testing for: ", coefs, sep=""))
-    print(paste("@ lfcThreshold: ", lfcThreshold.set, sep=""))
-    print(paste("@ alpha: ", alpha.set, sep=""))
-
     ## assayribo.conditionTrt = changes in Ribo in conditon Trt vs Ctrl accounting for changes in RNA in Trt vs Ctrl
+    coef <- resultsNames(dds.sub)[length(resultsNames(dds.sub))] # last should always be interaction as we defined it
+    print(paste0("Interaction - Testing for: ", coef, " @ lfcThreshold: ", lfcThreshold.set, " and alpha: ", alpha.set))
     res.inter <- results(dds.sub,
-                         name=resultsNames(dds.sub)[4], # do we get the correct name if batch?
+                         name=coef,
                          lfcThreshold=lfcThreshold.set,
                          altHypothesis=altHypothesis.set,
                          alpha=alpha.set,
@@ -156,14 +152,16 @@ run_analysis_fit_sub_deltaTE <- function(contrast, coldata, dds, model) {
     dds.ribo$condition <- relevel(dds.ribo$condition, ref=denom.condition)
     dds.ribo$condition <- droplevels(dds.ribo$condition)
     dds.ribo <- DESeq(dds.ribo)
+    coef <- resultsNames(dds.ribo)[length(resultsNames(dds.ribo))] # contrast=c("condition", num.condition, denom.condition)
+    print(paste0("Ribo - Testing for: ", coef, " @ lfcThreshold: ", lfcThreshold.set, " and alpha: ", alpha.set))
     res.ribo <- results(dds.ribo,
-                        contrast=c("condition", num.condition, denom.condition),
+                        name=coef,
                         lfcThreshold=lfcThreshold.set,
                         altHypothesis=altHypothesis.set,
                         alpha=alpha.set,
                         filterFun=ihw)
     res.ribo$padj[is.na(res.ribo$padj)] <- 1
-    res.ribo <- lfcShrink(dds.ribo, coef=resultsNames(dds.ribo)[2], type="apeglm", res=res.ribo)
+    res.ribo <- lfcShrink(dds.ribo, coef=coef, type="apeglm", res=res.ribo)
 
     dds.rna <- DESeqDataSetFromMatrix(countData=cts.rna,
                                       colData=coldata.rna,
@@ -171,14 +169,16 @@ run_analysis_fit_sub_deltaTE <- function(contrast, coldata, dds, model) {
     dds.rna$condition <- relevel(dds.rna$condition, ref=denom.condition)
     dds.rna$condition <- droplevels(dds.rna$condition)
     dds.rna <- DESeq(dds.rna)
+    coef <- resultsNames(dds.rna)[length(resultsNames(dds.rna))] # contrast=c("condition", num.condition, denom.condition)
+    print(paste0("RNA - Testing for: ", coef, " @ lfcThreshold: ", lfcThreshold.set, " and alpha: ", alpha.set))
     res.rna <- results(dds.rna,
-                       contrast=c("condition", num.condition, denom.condition),
+                       name=coef,
                        lfcThreshold=lfcThreshold.set,
                        altHypothesis=altHypothesis.set,
                        alpha=alpha.set,
                        filterFun=ihw)
     res.rna$padj[is.na(res.rna$padj)] <- 1
-    res.rna <- lfcShrink(dds.rna, coef=resultsNames(dds.rna)[2], type="apeglm", res=res.rna)
+    res.rna <- lfcShrink(dds.rna, coef=coef, type="apeglm", res=res.rna)
 
     all.res <- list("dte"=res.inter,
                     "rna"=res.rna,
@@ -261,7 +261,7 @@ write_results <- function(dds, all.res, contrast) {
     filen <- file.path(dirloc.sub, paste0(contrast, ".xlsx"), fsep=.Platform$file.sep)
     print(paste("Writing results to: ", filen, sep=""))
     saveWorkbook(wb, filen, overwrite = TRUE)
-    get_reg_layers(res, dirloc.sub)
+    get_reg_layers(res, dirloc.sub, alpha.set)
 }
 
 
@@ -280,27 +280,26 @@ read_symbols <- function(samples, dirloc) {
     tbl[,1]
 }
 
-get_reg_layers <- function(res, dirloc) {
+get_reg_layers <- function(res, dirloc, alpha) {
     # use same terminology as Chothani et al. (deltaTE)
-    # use same global alpha.set
 
     # Translationally forwarded genes have a significant change in mRNA and RPF at the same rate, with no significant change in TE
-    forwarded <- res[which(res$padj.dte > alpha.set & res$padj.ribo < alpha.set & res$padj.rna < alpha.set),]
+    forwarded <- res[which(res$padj.dte > alpha & res$padj.ribo < alpha & res$padj.rna < alpha),]
     write.table(forwarded[,1:2], file.path(dirloc, "forwarded.txt", fsep=.Platform$file.sep), quote=F, sep="\t", col.names = F, row.names = F)
 
     # Exclusive genes are DTEGs that have a significant change in RPF, with no change in mRNA leading to a significant change in TE
-    exclusive <- res[which(res$padj.dte < alpha.set & res$padj.ribo < alpha.set & res$padj.rna > alpha.set),]
+    exclusive <- res[which(res$padj.dte < alpha & res$padj.ribo < alpha & res$padj.rna > alpha),]
     write.table(exclusive[,1:2], file.path(dirloc, "exclusive.txt", fsep=.Platform$file.sep), quote=F, sep="\t", col.names = F, row.names = F)
 
     # direction of change is taken into account
-    both <- which(res$padj.dte < alpha.set & res$padj.ribo < alpha.set & res$padj.rna < alpha.set)
+    both <- which(res$padj.dte < alpha & res$padj.ribo < alpha & res$padj.rna < alpha)
     # Translationally intensified genes have a significant change in TE that acts with the effect of transcription
     intensified <- res[both[which(res[both,]$log2FC.dte*res[both,]$log2FC.rna > 0)],]
     write.table(intensified[,1:2], file.path(dirloc, "intensified.txt", fsep=.Platform$file.sep), quote=F, sep="\t", col.names = F, row.names = F)
 
     # Translationally buffered genes have a significant change in TE that counteracts the change in RNA (buffering transcription)
     buffered <- res[both[which(res[both,]$log2FC.dte*res[both,]$log2FC.rna < 0)],]
-    buffered <- rbind(buffered, res[which(res$padj.dte < alpha.set & res$padj.ribo > alpha.set & res$padj.rna < alpha.set),])
+    buffered <- rbind(buffered, res[which(res$padj.dte < alpha & res$padj.ribo > alpha & res$padj.rna < alpha),])
     write.table(buffered[,1:2], file.path(dirloc, "buffered.txt", fsep=.Platform$file.sep), quote=F, sep="\t", col.names = F, row.names = F)
 
     filen <- file.path(dirloc, "scatter.pdf", fsep=.Platform$file.sep)
@@ -324,23 +323,27 @@ get_reg_layers <- function(res, dirloc) {
 ## Call
 
 # arguments
-defaults <- list(samples=NULL, method="LRT", batch=FALSE, filter=FALSE, lfcThreshold=log2(1.2), alpha=0.05)
+defaults <- list(method="LRT", lfcThreshold=log2(1.2), alpha=0.05, batch=FALSE, filter=FALSE)
 args <- R.utils::commandArgs(trailingOnly=TRUE, asValues=TRUE, defaults=defaults)
 if (is.null(args$config)) {
-    stop("run-tea [-config CONFIG] <-samples TABLE> <-method LRT/deltaTE> <-batch> <-filter> <-lfcThreshold L2FC> <-alpha ALPHA>\n",
+    stop("run-tea [-config CONFIG] <-method LRT/deltaTE> <-lfcThreshold L2FC> <-alpha ALPHA> <-batch> <-filter>\n",
          call.=FALSE)
 }
-
+# method
+method <- "LRT"
+if (args$method=="deltaTE") { method <- "deltaTE" }
+print(paste0("Using the following method: ", method, "..."))
+# defaults for calling DESEq results
 lfcThreshold.set <- args$lfcThreshold
 altHypothesis.set <- "greaterAbs"
 alpha.set <- args$alpha
-
+# config
 params <- yaml::read_yaml(args$config)
 # output directory
 dirloc.out <- params$tea_data
-# sample table file
-if (!is.null(args$samples)) {
-    filen <- args$samples
+# sample and count tables
+if (!is.null(params$sample_table)) {
+    filen <- params$sample_table
 } else {
     project <- ""
     if (!is.null(params$project_name)) {
@@ -351,43 +354,39 @@ if (!is.null(args$samples)) {
 }
 print(paste0("Using ", filen, " as sample table..."))
 samples <- read.delim(filen, sep=",")
-# contrasts
-contrasts <- data.frame(t(sapply(params$contrast, c)))
-contrasts$name <- rownames(contrasts)
-# method
-method <- "LRT"
-if (args$method=="deltaTE") { method <- "deltaTE" }
-print(paste0("Using the following method ", method, "..."))
-
-# write tmp files to
-tmp.loc <- uuid::UUIDgenerate()
-dirloc.tmp <- file.path(dirloc.out, tmp.loc, fsep=.Platform$file.sep)
-dir.create(dirloc.tmp)
-
 # wrangle
 samples <- as.data.frame(samples) # need dataframe for DESEq
 samples$condition <- factor(samples$condition)
+samples$assay <- tolower(samples$assay)
 samples$assay <- factor(samples$assay)
-
+from_htseq <- TRUE
+if (!is.null(params$count_table)) {
+    from_htseq <- FALSE
+    counts <- read.delim(params$count_table, sep=",", row.names=1)
+    print(paste0("Using ", params$count_table, " as count table..."))
+} else {
+    # write tmp files to
+    tmp.loc <- uuid::UUIDgenerate()
+    dirloc.tmp <- file.path(dirloc.out, tmp.loc, fsep=.Platform$file.sep)
+    dir.create(dirloc.tmp)
+    # link all files for DESeq
+    for (from in samples$fileName) {
+        to <- file.path(dirloc.tmp, basename(from), fsep=.Platform$file.sep)
+        file.symlink(from, to)
+    }
+    # now clean names to remove path
+    samples$fileName <- basename(samples$fileName)
+}
 # check if we use batch
 if (args$batch) {
     print("Batch only implemented for method=deltaTE.")
+    samples$batch <- factor(samples$batch)
     if (nlevels(samples$batch)<2) {
         args$batch <- FALSE
         print("Ignoring --batch! Use 'batch' as column header, and at least 2 levels!")
-    } else {
-        samples$batch <- factor(samples$batch)
     }
 }
-
-# link all files for DESeq
-for (from in samples$fileName) {
-    to <- file.path(dirloc.tmp, basename(from), fsep=.Platform$file.sep)
-    file.symlink(from, to)
-}
-
 # create DESEq data object
-samples$fileName <- basename(samples$fileName)
 model <- ~assay+condition+assay:condition
 if (method == "LRT") {
     model.reduced <- ~assay+condition
@@ -398,51 +397,58 @@ if (method == "LRT") {
         model.reduced <- ~batch+condition
     }
 }
-ddsHTSeq <- DESeqDataSetFromHTSeqCount(samples,
-                                       directory=dirloc.tmp,
-                                       design=model)
-
-stopifnot(all(samples$sampleName == colnames(ddsHTSeq)))
+if (from_htseq) {
+    ddsAll <- DESeqDataSetFromHTSeqCount(samples,
+                                         directory=dirloc.tmp,
+                                         design=model)
+    # annotation
+    # the order should be the same...
+    id.mapping <- read_symbols(samples, dirloc.tmp)
+    # remove files
+    unlink(dirloc.tmp, recursive=TRUE)
+} else {
+    ddsAll <- DESeqDataSetFromMatrix(countData=counts,
+                                     colData=samples,
+                                     design=model)
+    id.mapping <- rownames(counts)
+    names(id.mapping) <- id.mapping
+}
+stopifnot(all(samples$sampleName == colnames(ddsAll)))
 
 # always rna as reference level for assay
-ddsHTSeq$assay <- relevel(ddsHTSeq$assay, ref="rna")
-
-# annotation
-# the order should be the same...
-id.mapping <- read_symbols(samples, dirloc.tmp)
-
-# remove files
-unlink(dirloc.tmp, recursive=TRUE)
+ddsAll$assay <- relevel(ddsAll$assay, ref="rna")
 
 # separate normalisation ???
-# sf <- numeric(ncols(ddsHTSeq))
-# idx.ribo <- ddsHTSeq$assay == 'ribo'
-# sf[idx.ribo] <- estimateSizeFactorsFromMatrix(counts(ddsHTSeq)[,idx.ribo])
-# idx.rna <- ddsHTSeq$assay == 'rna'
-# sf[idx.rna] <- estimateSizeFactorsFromMatrix(counts(ddsHTSeq)[,idx.rna])
-# sizeFactors(ddsHTSeq) <- sf
+# sf <- numeric(ncols(ddsAll))
+# idx.ribo <- ddsAll$assay == 'ribo'
+# sf[idx.ribo] <- estimateSizeFactorsFromMatrix(counts(ddsAll)[,idx.ribo])
+# idx.rna <- ddsAll$assay == 'rna'
+# sf[idx.rna] <- estimateSizeFactorsFromMatrix(counts(ddsAll)[,idx.rna])
+# sizeFactors(ddsAll) <- sf
 
 # filter
-
 if (args$filter) {
     print("Removing genes with 0 counts in each assay separately, using the intersection...")
 
-    ddsHTSeq.cts <- counts(ddsHTSeq)
+    ddsAll.cts <- counts(ddsAll)
 
-    m_ribo <- ddsHTSeq.cts[,which(colData((ddsHTSeq))$assay == "ribo")]
-    m_rna <- ddsHTSeq.cts[,which(colData((ddsHTSeq))$assay == "rna")]
+    m_ribo <- ddsAll.cts[,which(colData((ddsAll))$assay == "ribo")]
+    m_rna <- ddsAll.cts[,which(colData((ddsAll))$assay == "rna")]
 
     idx.ribo <- which(apply(m_ribo, 1, function(x){length(which(x>0))})==ncol(m_ribo))
     idx.rna <- which(apply(m_rna, 1, function(x){length(which(x>0))})==ncol(m_rna))
 
     idx <- intersect(idx.ribo, idx.rna)
-    ddsHTSeq <- ddsHTSeq[idx,]
+    ddsAll <- ddsAll[idx,]
     id.mapping <- id.mapping[idx]
 }
 
 ## fit contrasts
+contrasts <- data.frame(t(sapply(params$contrast, c)))
+contrasts$name <- rownames(contrasts)
 if (method == "LRT") {
-    apply(contrasts, 1, run_analysis_fit_sub_lrt, coldata=samples, dds=ddsHTSeq, model=model.reduced)
+    apply(contrasts, 1, run_analysis_fit_sub_lrt, coldata=samples, dds=ddsAll, model=model.reduced)
 } else if (method == "deltaTE") {
-    apply(contrasts, 1, run_analysis_fit_sub_deltaTE, coldata=samples, dds=ddsHTSeq, model=model.reduced)
+    apply(contrasts, 1, run_analysis_fit_sub_deltaTE, coldata=samples, dds=ddsAll, model=model.reduced)
 }
+print("Done!")

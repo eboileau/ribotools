@@ -27,10 +27,12 @@ Install with
 .. code-block:: bash
 
     # currently only local install
-    conda env create -f environment.yml
-    conda activate ribotools
+    # see https://github.com/mamba-org/mamba/issues/633
+    mamba create -n ribotools
+    mamba activate ribotools
     git clone https://github.com/eboileau/ribotools.git && cd ribotools
-    pip --verbose install -e . 2>&1 | tee install.log
+    mamba env update -n ribotools --file environment.yml
+    pip --verbose install . 2>&1 | tee install.log
 
 
 .. For detailed installation instructions, refer to `Installation <installation.html>`_.
@@ -51,7 +53,7 @@ To perform TE analysis, call
 
 .. code-block:: bash
 
-    call...
+    run-tea -config CONFIG
 
 
 For more information and guidelines on how to prepare the configuration file, refer to the `User guide <user-guide.html>`_.
@@ -71,8 +73,7 @@ Contributions are welcome! New code should follow `Black <https://black.readthed
 Running the tests
 ^^^^^^^^^^^^^^^^^
 
-We use pytest, but currently, there are none implemented...
-.. Dependencies can be installed with ``pip install -e .[tests]``.
+Dependencies can be installed with ``pip install -e .[tests]``.
 
 Building the docs
 ^^^^^^^^^^^^^^^^^
