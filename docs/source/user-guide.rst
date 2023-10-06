@@ -56,7 +56,7 @@ For TE analysis, the following keys are required:
 How to prepare genome indices and annotations
 ---------------------------------------------
 
-To get started, you need reference annotations (GTF), the ribosomal `Bowtie 2 <http://bowtie-bio.sourceforge.net/bowtie2/index.shtml>`_ index, and the `STAR <https://github.com/alexdobin/STAR>`_ index. Protocol-specific or general adapter sequences to be removed are also required for `Flexbar <https://github.com/seqan/flexbar/wiki/Manual>`_. We assume from now on that annotations and indices are already available.
+To get started, you need reference annotations (GTF), the ribosomal `Bowtie 2 <http://bowtie-bio.sourceforge.net/bowtie2/index.shtml>`_ index, and the `STAR <https://github.com/alexdobin/STAR>`_ index. Protocol-specific or general adapter sequences to be removed are also required for `Flexbar <https://github.com/seqan/flexbar/wiki/Manual>`_. We assume that annotations and indices are already available.
 
 .. tip::
 
@@ -68,7 +68,7 @@ To get started, you need reference annotations (GTF), the ribosomal `Bowtie 2 <h
 How to estimate abundance
 -------------------------
 
-For default Flexbar and STAR parameters, consult the **Rp-Bp** documentation, in particular `Default parameters and options <https://rp-bp.readthedocs.io/en/latest/user-guide.html#default-parameters-and-options>`_. Default STAR options are for Ribo-seq and trimmed RNA-seq reads. Unless you use ``--trim-rna-to-max-fragment-size``, or to change the default parameters, use ``--star-options`` to override defaults, and run Ribo-seq and RNA-seq separately.
+For default Flexbar and STAR parameters, consult the **Rp-Bp** documentation, in particular `Default parameters and options <https://rp-bp.readthedocs.io/en/latest/user-guide.html#default-parameters-and-options>`_. Note that providing ``--post-trim-length`` as a ``--flexbar-options`` will overwrite ``--trim-rna-to-max-fragment-size``. Default STAR options are for Ribo-seq and trimmed RNA-seq reads. Unless you use ``--trim-rna-to-max-fragment-size``, or to change the mapping parameters, use ``--star-options`` to override defaults, and run Ribo-seq and RNA-seq separately.
 
 
 .. important::
@@ -124,7 +124,6 @@ Output files
 ^^^^^^^^^^^^
 
 Except for *orf_profiles*, all output files follow the conventions described in **Rp-Bp** `output files <https://rp-bp.readthedocs.io/en/latest/user-guide.html#id10>`_. For RNA-seq, we follow the same conventions and nomenclature. Count tables are written to *<riboseq_data>/count-tables* and *<rnaseq_data>/count-tables*.
-
 
 
 Default parameters and options

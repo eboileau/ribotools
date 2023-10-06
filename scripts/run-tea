@@ -120,7 +120,7 @@ run_analysis_fit_sub_deltaTE <- function(contrast, coldata, dds, model) {
 
     stopifnot(all(rownames(colData(dds.sub)) == colnames(dds.sub)))
 
-    # fit the model
+    # fit the full model
     dds.sub <- DESeq(dds.sub)
 
     ## assayribo.conditionTrt = changes in Ribo in conditon Trt vs Ctrl accounting for changes in RNA in Trt vs Ctrl
@@ -146,6 +146,7 @@ run_analysis_fit_sub_deltaTE <- function(contrast, coldata, dds, model) {
     cts.ribo <- cts[,idx.ribo]
     cts.rna <- cts[,idx.rna]
 
+    # fit the "reduced" model
     dds.ribo <- DESeqDataSetFromMatrix(countData=cts.ribo,
                                        colData=coldata.ribo,
                                        design=model)
