@@ -58,7 +58,7 @@ For example
 
 
 HTSeq workflow
-""""""""""""""
+^^^^^^^^^^^^^^
 
 After ``run-htseq-workflow``, count tables are available under *<riboseq_data>/count-tables* and *<rnaseq_data>/count-tables* (see `User guide <user-guide.html>`_). Then you just need to
 
@@ -87,7 +87,7 @@ This will create a file named *sample-table<-project_name>.csv*, where ``project
 
 
 General workflow
-""""""""""""""""
+^^^^^^^^^^^^^^^^
 
 To estimate TE with data prepared from a different workflow, the sample table must conform to the **Ribotools** specs (that derive from **DESeq2**). In it's current format, it must have, minimally, the following header ``sampleName,assay,condition``, in this same order (see above). The ``assay`` is either *ribo* or *rna*, and the ``condition`` must match the list of ``contrasts`` from the config. The format should be CSV.
 

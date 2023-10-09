@@ -43,7 +43,7 @@ or create an environment, called *ribotools*, containing the **Ribotools** packa
 .. _pypi_install:
 
 Contributing to **Ribotools**
--------------------------
+-----------------------------
 
 To install the local VCS project in development mode
 

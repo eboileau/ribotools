@@ -151,7 +151,7 @@ Check `Default parameters and options <https://rp-bp.readthedocs.io/en/latest/us
 
 
 HTSeq
-"""""
+^^^^^
 
 Default options are overridden via command line using ``--htseq-options``.
 
