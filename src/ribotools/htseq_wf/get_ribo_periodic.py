@@ -85,6 +85,8 @@ def main():
     required_keys = ["riboseq_data", "genome_base_path", "genome_name"]
     utils.check_keys_exist(config, required_keys)
 
+    models_base = config.get("models_base", default_models_base)
+
     call = not args.do_not_call
     keep_delete_files = args.keep_intermediate_files or args.do_not_call
 
@@ -163,8 +165,6 @@ def main():
     metagene_profile_bayes_factors = filenames.get_metagene_profiles_bayes_factors(
         config["riboseq_data"], args.name, is_unique=is_unique, note=note
     )
-
-    models_base = config.get("models_base", default_models_base)
 
     periodic_models = filenames.get_models(models_base, "periodic")
     non_periodic_models = filenames.get_models(models_base, "nonperiodic")
@@ -245,10 +245,12 @@ def main():
 
     in_files = [metagene_profile_bayes_factors]
     out_files = [periodic_offsets]
+    file_checkers = {periodic_offsets: utils.check_gzip_file}
     shell_utils.call_if_not_exists(
         cmd,
         out_files,
         in_files=in_files,
+        file_checkers=file_checkers,
         overwrite=args.overwrite,
         call=call,
         keep_delete_files=keep_delete_files,

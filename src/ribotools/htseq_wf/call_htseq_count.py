@@ -63,6 +63,15 @@ def main():
         default=None,
     )
 
+    parser.add_argument(
+        "--gtf",
+        help="""A different GTF file for abundance estimation, e.g. the output
+        of get-gtf-from-predictions (Ribo-seq ORFs). This is passed to
+        htseq-count and overrides the GTF file from the config.""",
+        type=str,
+        dest="htseq_gtf",
+    )
+
     clu.add_file_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     logging_utils.add_logging_options(parser)
@@ -95,7 +104,7 @@ def main():
     keep_delete_files = args.keep_intermediate_files or args.do_not_call
 
     config = yaml.load(open(args.config), Loader=yaml.FullLoader)
-    sample_name_map = ribo_utils.get_sample_name_map(config)
+    sample_name_map = filenames.get_sample_name_map(config, args.seq.lower())
     note = config.get("note", None)
 
     keep_key = "keep_" + str(args.seq) + "seq_multimappers"
@@ -117,23 +126,29 @@ def main():
 
         config_keys = ["matching_samples"]
         utils.check_keys_exist(config, config_keys)
-        matching_ribo_sample = config["matching_samples"][args.name]
 
         ribo_config = yaml.load(open(args.ribo_config), Loader=yaml.FullLoader)
         is_unique_ribo = not ("keep_riboseq_multimappers" in ribo_config)
 
-        lengths, _ = ribo_utils.get_periodic_lengths_and_offsets(
-            ribo_config,
-            matching_ribo_sample,
-            is_unique=is_unique_ribo,
-            default_params=metagene_options,
-        )
+        matching_ribo_sample = config["matching_samples"][args.name]
+        try:
+            lengths, _ = ribo_utils.get_periodic_lengths_and_offsets(
+                ribo_config,
+                matching_ribo_sample,
+                is_unique=is_unique_ribo,
+                default_params=metagene_options,
+            )
 
-        if len(lengths) == 0:
-            msg = """No periodic read lengths and offsets were found!, but the
-                                [--ribo-config] option was given!"""
-            logger.critical(msg)
-            return
+            if len(lengths) == 0:
+                msg = """No periodic read lengths and offsets were found!, but the
+                        [--ribo-config] option was given!"""
+                logger.critical(msg)
+                return
+        except:
+            # presumably missing Ribo-seq sample
+            # name: !!int value is given
+            lengths = []
+            lengths.append(matching_ribo_sample)
 
         lengths = str(max([int(l) for l in lengths]))
 
@@ -160,11 +175,16 @@ def main():
     # all options to htseq-count
     htseq_options_str = pgrm_utils.get_final_args(htseq_options, args.htseq_options)
 
+    if args.htseq_gtf:
+        gtf_file = args.htseq_gtf
+    else:
+        gtf_file = filenames.get_gtf(config)
+
     cmd = "{} {} {} {} > {}".format(
-        htseq_executable, htseq_options_str, bam_file, config["gtf"], count_file
+        htseq_executable, htseq_options_str, bam_file, gtf_file, count_file
     )
 
-    in_files = [bam_file, config["gtf"]]
+    in_files = [bam_file, gtf_file]
     out_files = [count_file]
     shell_utils.call_if_not_exists(
         cmd,
