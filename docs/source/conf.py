@@ -35,6 +35,6 @@ exclude_patterns = []
 html_theme = "furo"
 html_static_path = ["_static"]
 html_theme_options = {
-    "light_logo": "ribotools-logo-light.svg",
-    "dark_logo": "ribotools-logo-dark.svg",
+    "light_logo": "ribotools-logo-light.png",
+    "dark_logo": "ribotools-logo-dark.png",
 }
