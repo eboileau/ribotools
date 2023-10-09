@@ -27,7 +27,7 @@ command line.
 # stranded=reverse: read has to be mapped to the opposite strand as the feature (single-end) or rf or first strand
 
 # Because the [--additional-attr] must be repeated for each attribute, we cannot currently use a list
-# of default attributes. Use e.g. --htseq-options "--additional-attr gene_name --additional-attr transcript_id"
+# of default attributes. Use e.g. --htseq-options "--additional-attr gene_name" "--additional-attr transcript_id"
 
 htseq_executable = "htseq-count"
 htseq_options = {

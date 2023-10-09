@@ -78,7 +78,7 @@ For default Flexbar and STAR parameters, consult the **Rp-Bp** documentation, in
 
 .. note::
 
-    Ribo-seq abundance is estimated from ribosome-protected RNA fragments (ribosome footprints) using periodic reads only, unless the ``--skip-periodicity-estimation`` option is used. **Ribotools** does not currently handle paired-end RNA-seq. In the config file, specify only one pair (typically the first) for ``rnaseq_samples``. But you should specify whether the data is from a strand-specific assay for counting reads, see below for further details. Use the option ``--trim-rna-to-max-fragment-size`` to trim RNA-seq reads to the maximum periodic fragment length of a matched Ribo-seq sample, to minimize mapping bias. Matching samples are specified in the config file via the ``matching_samples`` key.
+    Ribo-seq abundance is estimated from ribosome-protected RNA fragments (RPFs) using periodic reads only, unless the ``--skip-periodicity-estimation`` option is used. **Ribotools** does not currently handle paired-end RNA-seq. In the config file, specify only one pair (typically the first) for ``rnaseq_samples``. But you should specify whether the data is from a strand-specific assay for counting reads, see below for further details. Use the option ``--trim-rna-to-max-fragment-size`` to trim RNA-seq reads to the maximum periodic fragment length of a matched Ribo-seq sample, to minimize mapping bias. Matching samples are specified in the config file via the ``matching_samples`` key.
 
 
 .. tip::
@@ -111,9 +111,18 @@ General usage
     run-htseq-workflow ribo <config> --run-all [--trim-rna-to-max-fragment-size] [--rna-config RNA_CONFIG] --htseq-options "--stranded yes" --stranded reverse [options]
 
 
+If Ribo-seq ORFs are available from **Rp-Bp**, TE can be estimated for Ribo-seq ORFs, instead of genes (CDS by default, or exon). In this case, you need to prepare a special GTF file before, and ``run-htseq-workflow`` with additional options, see `How to estimate TE using Ribo-seq ORFs <ribo-seq-orfs.html>`_ for details.
+
+
+.. important::
+
+    If using **Ribotools** with a *de novo* assembly generated with **Rp-Bp**, specifying ``--htseq-options --type=exon``, or type other than ``CDS`` can have unexpected results! This is because the GTF file created under ``genome_base_path`` is a concatenation of ``gtf`` and ``de_novo_gtf``, and possibly contains repeated features (see `How to prepare genome indices and annotations <https://rp-bp.readthedocs.io/en/latest/user-guide.html#how-to-prepare-genome-indices-and-annotations>`_). For mapping this is not a problem. For abundance estimation, however, this can be problematic. Unless this GTF file is manually curated, only default *i.e.* only CDS features should be used.
+
+
 .. tip::
 
     Use ``--star-options "--quantMode GeneCounts"`` to get count tables. You can check counts for unstranded data (column 2), counts for the 1st read strand (htseq-count -s yes), and counts for the 2nd read strand (htseq-count -s reverse). The stranded column (3 or 4) with the lowest *N_noFeature* count should correspond to the correct strand option.
+
 
 .. tip::
 
@@ -132,7 +141,7 @@ Default parameters and options
 The parameters and options decribed below are all optional. All parameters and options have default values that do not normally need to be modified.
 
 
-.. important::
+.. note::
 
     **Rp-Bp** parameters can be changed via the configuration file, and options for external programs (Flexbar, STAR) are handled via command line arguments.
     You do not need to include **Rp-Bp** parameters in the configuration file, unless you wish to change their values.

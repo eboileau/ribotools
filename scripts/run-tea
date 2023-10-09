@@ -1,12 +1,15 @@
 #! /usr/bin/env Rscript
 
 # Usage: run-tea [-config CONFIG] <-method LRT/deltaTE> <-lfcThreshold L2F> <-alpha ALPHA> <-batch> <-filter>
-# 1. [-config CONFIG]      Yaml config file (same as used for run-htseq-workflow)
-# 2. <-method LRT/deltaTE> Method to use - default LRT
-# 3. <-lfcThreshold L2F>   LFC threshold - default log2(1.2)
-# 4. <-alpha ALPHA>        FDR threshold - default 0.05
-# 5. <-batch>              If present, uses "batch" from sample table
-# 6. <-filter>             If present, filter features with 0 counts in each assay separately
+# 1. [-config CONFIG]        Yaml config file (same as used for run-htseq-workflow)
+# 2. <-method LRT/deltaTE>   Method to use - default LRT
+# 3. <-lfcThreshold L2F>     LFC threshold - default log2(1.2)
+# 4. <-alpha ALPHA>          FDR threshold - default 0.05
+# 5. <-symbolCol COLUMN>     Column for feature symbol/names to add to results - default 2
+# 6. <-orfCol COLUMN_NUMBER> Column for ORF type to add to results
+# 7. <-delim TAB/CSV>        Field separator character for read.table - default ""
+# 8. <-batch>                If present, uses "batch" from sample table
+# 9. <-filter>               If present, filter features with 0 counts in each assay separately
 
 library(yaml)
 library(DESeq2)
@@ -237,12 +240,20 @@ write_results <- function(dds, all.res, contrast) {
 
     res$symbol <- id.mapping
 
-    res <- res %>%
-            dplyr::select(id, symbol, baseMean,
-                    log2FC.dte, pvalue.dte, padj.dte,
+    if (!is.null(args$orfCol)) {
+        res$orfType <- orfType.mapping
+        res <- res %>%
+            dplyr::select(id, symbol, orfType, baseMean,
                     log2FC.rna, pvalue.rna, padj.rna,
-                    log2FC.ribo, pvalue.ribo, padj.ribo)
-
+                    log2FC.ribo, pvalue.ribo, padj.ribo,
+                    log2FC.dte, pvalue.dte, padj.dte)
+    } else {
+        res <- res %>%
+                dplyr::select(id, symbol, baseMean,
+                        log2FC.rna, pvalue.rna, padj.rna,
+                        log2FC.ribo, pvalue.ribo, padj.ribo,
+                        log2FC.dte, pvalue.dte, padj.dte)
+    }
     res <- res %>% left_join(cts, by="id")
 
     ## write to disk
@@ -266,13 +277,14 @@ write_results <- function(dds, all.res, contrast) {
 }
 
 
-read_symbols <- function(samples, dirloc) {
-    # read gene symbols from HTSeq output tables
-    l <- lapply( as.character( samples[,2] ), function(fn) read.table( file.path( dirloc, fn ), fill=TRUE ))
-    if( ! all( sapply( l, function(a) all( head(a$V2, -5) == head(l[[1]]$V2, -5) ) ) ) )
-        stop( "Gene names (second column) differ between files." )
-    tbl <- sapply( l, function(a) a[,2] )
-    colnames(tbl) <- samples[,1]
+read_symbols <- function(samples, dirloc, col, sep="") {
+    # read gene symbols/other column from HTSeq output tables
+    # same as DESeqDataSetFromHTSeqCount_delim, but for a given column
+    l <- lapply( as.character( samples$fileName ), function(fn) read.table( file.path( dirloc, fn ), sep=sep, fill=TRUE ))
+    if( ! all( sapply( l, function(a) all( head(a[,col], -5) == head(l[[1]][,col], -5) ) ) ) )
+        stop( paste0("Column ", col, " differ between files!" ))
+    tbl <- sapply( l, function(a) a[,col] )
+    colnames(tbl) <- samples$sampleName
     rownames(tbl) <- l[[1]]$V1
     oldSpecialNames <- c("no_feature","ambiguous","too_low_aQual","not_aligned","alignment_not_unique")
     specialRows <- (substr(rownames(tbl),1,1) == "_") | rownames(tbl) %in% oldSpecialNames
@@ -280,6 +292,28 @@ read_symbols <- function(samples, dirloc) {
     # in fact we just need the first columnn - format as mapIds
     tbl[,1]
 }
+
+# same as https://rdrr.io/bioc/DESeq2/src/R/AllClasses.R except for sep passed to read.table
+DESeqDataSetFromHTSeqCount_delim <- function(sampleTable, directory=".", design, sep="", ignoreRank=FALSE, ...)
+{
+  if (missing(design)) stop("design is missing")
+  l <- lapply( as.character( sampleTable[,2] ), function(fn) read.table( file.path( directory, fn ), sep=sep, fill=TRUE ) )
+  if( ! all( sapply( l, function(a) all( a$V1 == l[[1]]$V1 ) ) ) )
+    stop( "Gene IDs (first column) differ between files." )
+  # select last column of 'a', works even if htseq was run with '--additional-attr'
+  tbl <- sapply( l, function(a) a[,ncol(a)] )
+  colnames(tbl) <- sampleTable[,1]
+  rownames(tbl) <- l[[1]]$V1
+  rownames(sampleTable) <- sampleTable[,1]
+  oldSpecialNames <- c("no_feature","ambiguous","too_low_aQual","not_aligned","alignment_not_unique")
+  # either starts with two underscores
+  # or is one of the old special names (htseq-count backward compatability)
+  specialRows <- (substr(rownames(tbl),1,1) == "_") | rownames(tbl) %in% oldSpecialNames
+  tbl <- tbl[ !specialRows, , drop=FALSE ]
+  object <- DESeqDataSetFromMatrix(countData=tbl, colData=sampleTable[,-(1:2),drop=FALSE], design=design, ignoreRank, ...)
+  return(object)
+}
+
 
 get_reg_layers <- function(res, dirloc, alpha) {
     # use same terminology as Chothani et al. (deltaTE)
@@ -324,11 +358,21 @@ get_reg_layers <- function(res, dirloc, alpha) {
 ## Call
 
 # arguments
-defaults <- list(method="LRT", lfcThreshold=log2(1.2), alpha=0.05, batch=FALSE, filter=FALSE)
+defaults <- list(method="LRT", lfcThreshold=log2(1.2), alpha=0.05,
+                 symbolCol=2, orfCol=NULL, delim="", batch=FALSE, filter=FALSE)
 args <- R.utils::commandArgs(trailingOnly=TRUE, asValues=TRUE, defaults=defaults)
 if (is.null(args$config)) {
-    stop("run-tea [-config CONFIG] <-method LRT/deltaTE> <-lfcThreshold L2FC> <-alpha ALPHA> <-batch> <-filter>\n",
+    stop("run-tea [-config CONFIG] <-method LRT/deltaTE> <-lfcThreshold L2FC> <-alpha ALPHA>
+         <-symbolCol COLUMN> <-orfCol COLUMN_NUMBER> <-delim TAB/CSV> <-batch> <-filter>\n",
          call.=FALSE)
+}
+# delimiter
+if (tolower(args$delim) == "tab") {
+    sep = "\t"
+} else if (tolower(args$delim) == "csv") {
+    sep = ","
+} else {
+    sep = ""
 }
 # method
 method <- "LRT"
@@ -380,11 +424,11 @@ if (!is.null(params$count_table)) {
 }
 # check if we use batch
 if (args$batch) {
-    print("Batch only implemented for method=deltaTE.")
+    if (method == "LRT") { print("Batch only implemented for <-method deltaTE>... ignoring option silently!") }
     samples$batch <- factor(samples$batch)
     if (nlevels(samples$batch)<2) {
         args$batch <- FALSE
-        print("Ignoring --batch! Use 'batch' as column header, and at least 2 levels!")
+        print("Ignoring <-batch>! Use 'batch' as column header, and at least 2 levels!")
     }
 }
 # create DESEq data object
@@ -399,12 +443,17 @@ if (method == "LRT") {
     }
 }
 if (from_htseq) {
-    ddsAll <- DESeqDataSetFromHTSeqCount(samples,
-                                         directory=dirloc.tmp,
-                                         design=model)
+    ddsAll <- DESeqDataSetFromHTSeqCount_delim(samples,
+                                               directory=dirloc.tmp,
+                                               design=model,
+                                               sep=sep)
     # annotation
     # the order should be the same...
-    id.mapping <- read_symbols(samples, dirloc.tmp)
+    id.mapping <- read_symbols(samples, dirloc.tmp, as.integer(args$symbolCol), sep=sep)
+    if (!is.null(args$orfCol)) {
+        # add ORF types
+        orfType.mapping <- read_symbols(samples, dirloc.tmp, as.integer(args$orfCol), sep=sep)
+    }
     # remove files
     unlink(dirloc.tmp, recursive=TRUE)
 } else {
@@ -419,7 +468,7 @@ stopifnot(all(samples$sampleName == colnames(ddsAll)))
 # always rna as reference level for assay
 ddsAll$assay <- relevel(ddsAll$assay, ref="rna")
 
-# separate normalisation ???
+# separate normalisation ?
 # sf <- numeric(ncols(ddsAll))
 # idx.ribo <- ddsAll$assay == 'ribo'
 # sf[idx.ribo] <- estimateSizeFactorsFromMatrix(counts(ddsAll)[,idx.ribo])
