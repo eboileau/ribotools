@@ -1,8 +1,8 @@
 #! /usr/bin/env Rscript
 
-# Usage: get-sample-table [-config CONFIG] <-ribo/-rna>
-# 1. [-config CONFIG] Yaml config file (same as used for run-htseq-workflow)
-# 2. <-ribo/-rna> Prepare only table for Ribo-seq or RNA-seq samples - default both
+# Usage: get-sample-table <-config CONFIG> [{-ribo,-rna}]
+# 1. <-config CONFIG> Yaml config file (same as used for run-htseq-workflow)
+# 2. [{-ribo,-rna}]   Prepare only table for Ribo-seq or RNA-seq samples - default both
 
 library(yaml)
 library(dplyr)
@@ -16,7 +16,7 @@ base.loc <- "count-tables"
 defaults <- list(config=NULL, ribo=FALSE, rna=FALSE)
 args <- R.utils::commandArgs(trailingOnly=TRUE, asValues=TRUE, defaults=defaults)
 if (is.null(args$config)) {
-    stop("get-sample-table [-config CONFIG] <-ribo/-rna>\n",
+    stop("get-sample-table <-config CONFIG> [{-ribo,-rna}]\n",
          call.=FALSE)
 }
 if (!args$ribo & !args$rna) {

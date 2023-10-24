@@ -12,7 +12,7 @@ The **Ribotools** box
 
     If using existing output or alignment files, do not use the ``--overwrite`` option!
 
-Once Ribo- and RNA-seq count tables are available, **Ribotools** can be used to estimate translation efficiency. This is described in `How to estimate TE <estimate-te.html>`_.
+Once Ribo- and RNA-seq count tables are available, **Ribotools** can be used to estimate translation efficiency. This is described in `How to estimate TE <estimate-te.html>`_. **Ribotools** can also be used to estimate differential expression based on Ribo-seq periodic fragment lengths, *i.e.* determine which features, genes or Ribo-seq ORFs, are differentially regulated. This is described in `How to estimate DE <estimate-de.html>`_.
 
 .. _top:
 .. use with `back to top <#top>`_
@@ -33,21 +33,21 @@ A single YAML configuration file can be used for both Ribo- and RNA-seq. For Rib
 * ``rnaseq_sample_name_map`` *(optional, output)* A dictionary *key: value*, where *key* is the same as ``rnaseq_samples`` *key*, and *value* is a fancy name for *key* to use in downstream analyses.
 
 
-For TE analysis, the following keys are required:
+For TE or DE analyses, the following keys are required:
 
 * ``contrasts`` *(required, input)* A dictionary *key: value*, where *key* is a name for the contrast to be tested, and *value* contains 2 items, the first item is the condition to be tested against the second (reference).
 
-* ``tea_data`` *(required, output)* The base output location for all created files.
+* ``tea_data`` *(required, output)* The base output location for all created files, wheter you are interested in TE or in DE.
 
-* ``sample_table`` *(optional, input)* The path to a sample table *e.g.* if only running TE analysis from existing data.
-* ``count_table`` *(optional, input)* The path to a count table *e.g.* if only running TE analysis from existing data.
+* ``sample_table`` *(optional, input)* The path to a sample table *e.g.* if only running the analysis from existing data.
+* ``count_table`` *(optional, input)* The path to a count table *e.g.* if only running the analysis from existing data.
 
 
 .. A *template* configuration file is available to download with the Tutorials.
 
 .. tip::
 
-    Use keywords such as *Ribo* and *RNA* in ``riboseq_sample_name_map`` and ``rnaseq_sample_name_map`` values, respectively, to facilitate data integration for TE analysis.
+    Use keywords such as *Ribo* and *RNA* in ``riboseq_sample_name_map`` and ``rnaseq_sample_name_map`` values, respectively, to facilitate data integration for the analysis.
 
 
 .. _prepare_genome:
@@ -111,17 +111,17 @@ General usage
     run-htseq-workflow ribo <config> --run-all [--trim-rna-to-max-fragment-size] [--rna-config RNA_CONFIG] --htseq-options "--stranded yes" --stranded reverse [options]
 
 
-If Ribo-seq ORFs are available from **Rp-Bp**, TE can be estimated for Ribo-seq ORFs, instead of genes (CDS by default, or exon). In this case, you need to prepare a special GTF file before, and ``run-htseq-workflow`` with additional options, see `How to estimate TE using Ribo-seq ORFs <ribo-seq-orfs.html>`_ for details.
+If Ribo-seq ORFs are available from **Rp-Bp**, TE or DE can be estimated for Ribo-seq ORFs, instead of genes (CDS by default, or exon). In this case, you need to prepare a GTF file with Ribo-seq ORFs before, and ``run-htseq-workflow`` with additional options, see `How to estimate TE using Ribo-seq ORFs <ribo-seq-orfs.html>`_ for details.
 
 
 .. important::
 
-    If using **Ribotools** with a *de novo* assembly generated with **Rp-Bp**, specifying ``--htseq-options --type=exon``, or type other than ``CDS`` can have unexpected results! This is because the GTF file created under ``genome_base_path`` is a concatenation of ``gtf`` and ``de_novo_gtf``, and possibly contains repeated features (see `How to prepare genome indices and annotations <https://rp-bp.readthedocs.io/en/latest/user-guide.html#how-to-prepare-genome-indices-and-annotations>`_). For mapping this is not a problem. For abundance estimation, however, this can be problematic. Unless this GTF file is manually curated, only default *i.e.* only CDS features should be used.
+    If using **Ribotools** with a *de novo* assembly generated with **Rp-Bp**, specifying ``--htseq-options --type=exon``, or type other than ``CDS`` can have unexpected results! This is because the GTF file created under ``genome_base_path`` is a concatenation of ``gtf`` and ``de_novo_gtf``, and possibly contains repeated features (see `How to prepare genome indices and annotations <https://rp-bp.readthedocs.io/en/latest/user-guide.html#how-to-prepare-genome-indices-and-annotations>`_). For mapping this is not a problem. For abundance estimation, however, this can be problematic. Unless this GTF file is manually curated, only CDS features should be used (default).
 
 
 .. tip::
 
-    Use ``--star-options "--quantMode GeneCounts"`` to get count tables. You can check counts for unstranded data (column 2), counts for the 1st read strand (htseq-count -s yes), and counts for the 2nd read strand (htseq-count -s reverse). The stranded column (3 or 4) with the lowest *N_noFeature* count should correspond to the correct strand option.
+    Use ``--star-options "--quantMode GeneCounts"`` to get count tables. You can check counts for unstranded data (column 2), counts for the 1st read strand (column 3, htseq-count -s yes), and counts for the 2nd read strand (column 4, htseq-count -s reverse). The stranded column (3 or 4) with the lowest *N_noFeature* count should correspond to the correct strand option.
 
 
 .. tip::

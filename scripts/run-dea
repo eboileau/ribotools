@@ -1,13 +1,13 @@
 #! /usr/bin/env Rscript
 
-# Usage: run-dea [-config CONFIG] <-lfcThreshold L2F> <-alpha ALPHA> <-symbolCol COLUMN> <-orfCol COLUMN_NUMBER> <-delim TAB/CSV> <-batch>
-# 1. [-config CONFIG]        Yaml config file (same as used for run-htseq-workflow)
-# 2. <-lfcThreshold L2F>     LFC threshold - default log2(1.2)
-# 3. <-alpha ALPHA>          FDR threshold - default 0.05
-# 4. <-symbolCol COLUMN>     Column for feature symbol/names to add to results - default 2
-# 5. <-orfCol COLUMN_NUMBER> Column for ORF type to add to results
-# 6. <-delim TAB/CSV>        Field separator character for read.table - default ""
-# 7. <-batch>                If present, uses "batch" from sample table
+# Usage: run-dea <-config CONFIG> [-lfcThreshold L2F] [-alpha ALPHA] [-symbolCol COLUMN] [-orfCol COLUMN_NUMBER] [-delim TAB/CSV] [-batch]
+# 1. <-config CONFIG>        Yaml config file (same as used for run-htseq-workflow)
+# 2. [-lfcThreshold L2F]     LFC threshold - default log2(1.2)
+# 3. [-alpha ALPHA]          FDR threshold - default 0.05
+# 4. [-symbolCol COLUMN]     Column for feature symbol/names to add to results - default 2
+# 5. [-orfCol COLUMN_NUMBER] Column for ORF type to add to results
+# 6. [-delim TAB/CSV]        Field separator character for read.table - default ""
+# 7. [-batch]                If present, uses "batch" from sample table
 
 library(yaml)
 library(DESeq2)
@@ -150,8 +150,8 @@ defaults <- list(lfcThreshold=log2(1.2), alpha=0.05, symbolCol=2, orfCol=NULL,
                  delim="", batch=FALSE)
 args <- R.utils::commandArgs(trailingOnly=TRUE, asValues=TRUE, defaults=defaults)
 if (is.null(args$config)) {
-    stop("run-dea [-config CONFIG] <-lfcThreshold L2FC> <-alpha ALPHA>
-         <-symbolCol COLUMN> <-orfCol COLUMN_NUMBER> <-delim TAB/CSV> <-batch>\n",
+    stop("<-config CONFIG> [-lfcThreshold L2F] [-alpha ALPHA] [-symbolCol COLUMN] [-orfCol COLUMN_NUMBER]
+        [-delim TAB/CSV] [-batch]\n",
          call.=FALSE)
 }
 # delimiter

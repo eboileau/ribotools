@@ -1,16 +1,16 @@
 #! /usr/bin/env Rscript
 
-# Usage: run-tea [-config CONFIG] <-method LRT/deltaTE> <-lfcThreshold L2F> <-alpha ALPHA>
-#                <-symbolCol COLUMN> <-orfCol COLUMN_NUMBER> <-delim TAB/CSV> <-batch> <-filter>
-# 1. [-config CONFIG]        Yaml config file (same as used for run-htseq-workflow)
-# 2. <-method LRT/deltaTE>   Method to use - default LRT
-# 3. <-lfcThreshold L2F>     LFC threshold - default log2(1.2)
-# 4. <-alpha ALPHA>          FDR threshold - default 0.05
-# 5. <-symbolCol COLUMN>     Column for feature symbol/names to add to results - default 2
-# 6. <-orfCol COLUMN_NUMBER> Column for ORF type to add to results
-# 7. <-delim TAB/CSV>        Field separator character for read.table - default ""
-# 8. <-batch>                If present, uses "batch" from sample table
-# 9. <-filter>               If present, filter features with 0 counts in each assay separately
+# Usage: run-tea <-config CONFIG> [-method {LRT,deltaTE}] [-lfcThreshold L2F] [-alpha ALPHA]
+#                [-symbolCol COLUMN] [-orfCol COLUMN_NUMBER] [-delim TAB/CSV] [-batch] [-filter]
+# 1. <-config CONFIG>        Yaml config file (same as used for run-htseq-workflow)
+# 2. [-method {LRT,deltaTE}] Method to use - default LRT
+# 3. [-lfcThreshold L2F]     LFC threshold - default log2(1.2)
+# 4. [-alpha ALPHA]          FDR threshold - default 0.05
+# 5. [-symbolCol COLUMN]     Column for feature symbol/names to add to results - default 2
+# 6. [-orfCol COLUMN_NUMBER] Column for ORF type to add to results
+# 7. [-delim TAB/CSV]        Field separator character for read.table - default ""
+# 8. [-batch]                If present, uses "batch" from sample table
+# 9. [-filter]               If present, filter features with 0 counts in each assay separately
 
 library(yaml)
 library(DESeq2)
@@ -362,8 +362,8 @@ defaults <- list(method="LRT", lfcThreshold=log2(1.2), alpha=0.05,
                  symbolCol=2, orfCol=NULL, delim="", batch=FALSE, filter=FALSE)
 args <- R.utils::commandArgs(trailingOnly=TRUE, asValues=TRUE, defaults=defaults)
 if (is.null(args$config)) {
-    stop("run-tea [-config CONFIG] <-method LRT/deltaTE> <-lfcThreshold L2FC> <-alpha ALPHA>
-         <-symbolCol COLUMN> <-orfCol COLUMN_NUMBER> <-delim TAB/CSV> <-batch> <-filter>\n",
+    stop("run-tea <-config CONFIG> [-method {LRT,deltaTE}] [-lfcThreshold L2F] [-alpha ALPHA]
+#                [-symbolCol COLUMN] [-orfCol COLUMN_NUMBER] [-delim TAB/CSV] [-batch] [-filter]\n",
          call.=FALSE)
 }
 # delimiter
