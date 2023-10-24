@@ -48,7 +48,11 @@ call-htseq-count = "ribotools.htseq_wf.call_htseq_count:main"
 
 # TEA
 [tool.setuptools]
-script-files = ["scripts/get-sample-table", "scripts/run-tea"]
+script-files = [
+  "scripts/get-sample-table",
+  "scripts/run-tea",
+  "scripts/run-dea"
+]
 
 [project.urls]
 Github = "https://github.com/eboileau/ribotools/"

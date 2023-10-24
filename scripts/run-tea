@@ -1,6 +1,7 @@
 #! /usr/bin/env Rscript
 
-# Usage: run-tea [-config CONFIG] <-method LRT/deltaTE> <-lfcThreshold L2F> <-alpha ALPHA> <-batch> <-filter>
+# Usage: run-tea [-config CONFIG] <-method LRT/deltaTE> <-lfcThreshold L2F> <-alpha ALPHA>
+#                <-symbolCol COLUMN> <-orfCol COLUMN_NUMBER> <-delim TAB/CSV> <-batch> <-filter>
 # 1. [-config CONFIG]        Yaml config file (same as used for run-htseq-workflow)
 # 2. <-method LRT/deltaTE>   Method to use - default LRT
 # 3. <-lfcThreshold L2F>     LFC threshold - default log2(1.2)
@@ -29,7 +30,6 @@ library(openxlsx)
 run_analysis_fit_sub_lrt <- function(contrast, coldata, dds, model) {
 
     # fit one given contrast
-    # NOTE: LFC shrinking is commented out
 
     # subset the DESeqDataSet for the selected contrast
     num.condition <- as.character(contrast[1])
