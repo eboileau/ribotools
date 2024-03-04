@@ -1,7 +1,8 @@
 #! /usr/bin/env Rscript
 
-# Usage: get-sample-table [-config CONFIG]
-# [-config CONFIG] Yaml config file (same as used for run-htseq-workflow)
+# Usage: get-sample-table <-config CONFIG> [{-ribo,-rna}]
+# 1. <-config CONFIG> Yaml config file (same as used for run-htseq-workflow)
+# 2. [{-ribo,-rna}]   Prepare only table for Ribo-seq or RNA-seq samples - default both
 
 library(yaml)
 library(dplyr)
@@ -12,12 +13,17 @@ base.loc <- "count-tables"
 ## I/O
 
 # arguments
-defaults <- list(config=NULL)
+defaults <- list(config=NULL, ribo=FALSE, rna=FALSE)
 args <- R.utils::commandArgs(trailingOnly=TRUE, asValues=TRUE, defaults=defaults)
 if (is.null(args$config)) {
-    stop("get-sample-table [-config CONFIG]\n",
+    stop("get-sample-table <-config CONFIG> [{-ribo,-rna}]\n",
          call.=FALSE)
 }
+if (!args$ribo & !args$rna) {
+    args$ribo <- TRUE
+    args$rna <- TRUE
+}
+
 # config file
 params <- yaml::read_yaml(args$config)
 # output directory
@@ -29,45 +35,53 @@ conditions <- unique(unlist(params$contrast))
 ## Call
 
 # rna
-dirloc.rna <- params$rnaseq_data
-dirloc.rna <- file.path(dirloc.rna, base.loc, fsep=.Platform$file.sep)
-rna.files <- list.files(dirloc.rna, full.names=TRUE)
+if (args$rna) {
+    dirloc.rna <- params$rnaseq_data
+    dirloc.rna <- file.path(dirloc.rna, base.loc, fsep=.Platform$file.sep)
+    rna.files <- list.files(dirloc.rna, full.names=TRUE)
 
-rna.table <- params$rnaseq_sample_name_map %>%
-    data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>%
-    dplyr::rename(sampleName = ".")
+    rna.table <- params$rnaseq_sample_name_map %>%
+        data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>%
+        dplyr::rename(sampleName = ".")
 
-rna.table <- rna.table %>%
-    rowwise() %>% mutate(fileName=rna.files[grep(sampleName, rna.files)])
+    rna.table <- rna.table %>%
+        rowwise() %>% mutate(fileName=rna.files[grep(sampleName, rna.files)])
 
-rna.table$assay <- 'rna'
-rna.table$condition <- NA
-used <- lapply(conditions, function(c) {rna.table$condition[grep(c, rna.table$sampleName, fixed=TRUE)] <<- c})
+    rna.table$assay <- 'rna'
+    rna.table$condition <- NA
+    used <- lapply(conditions, function(c) {rna.table$condition[grep(c, rna.table$sampleName, fixed=TRUE)] <<- c})
+
+    if (!args$ribo) { table <- rna.table }
+}
 
 # ribo
-dirloc.ribo <- params$riboseq_data
-dirloc.ribo <- file.path(dirloc.ribo, base.loc, fsep=.Platform$file.sep)
-ribo.files <- list.files(dirloc.ribo, full.names=TRUE)
+if (args$ribo) {
+    dirloc.ribo <- params$riboseq_data
+    dirloc.ribo <- file.path(dirloc.ribo, base.loc, fsep=.Platform$file.sep)
+    ribo.files <- list.files(dirloc.ribo, full.names=TRUE)
 
-ribo.table <- params$riboseq_sample_name_map %>%
-    data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>%
-    dplyr::rename(sampleName = ".")
+    ribo.table <- params$riboseq_sample_name_map %>%
+        data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>%
+        dplyr::rename(sampleName = ".")
 
-ribo.table <- ribo.table %>%
-    rowwise() %>% mutate(fileName=ribo.files[grep(sampleName, ribo.files)])
+    ribo.table <- ribo.table %>%
+        rowwise() %>% mutate(fileName=ribo.files[grep(sampleName, ribo.files)])
 
-ribo.table$assay <- 'ribo'
-ribo.table$condition <- NA
-used <- lapply(conditions, function(c) {ribo.table$condition[grep(c, ribo.table$sampleName, fixed=TRUE)] <<- c})
+    ribo.table$assay <- 'ribo'
+    ribo.table$condition <- NA
+    used <- lapply(conditions, function(c) {ribo.table$condition[grep(c, ribo.table$sampleName, fixed=TRUE)] <<- c})
 
-sampleTable <- bind_rows(ribo.table, rna.table)
+    if (!args$rna) { table <- ribo.table }
+}
+
+if (args$ribo & args$rna) { table <- bind_rows(ribo.table, rna.table) }
 
 project <- ""
 if (!is.null(params$project_name)) {
     project <- params$project_name
     project <- paste0("-", project)
 }
-write.csv(sampleTable,
+write.csv(table,
           file=file.path(dirloc.out, paste0("sample-table", project, ".csv"),
           fsep=.Platform$file.sep),
           row.names=FALSE,
