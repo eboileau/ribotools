@@ -45,15 +45,18 @@ alignment-workflow = "ribotools.htseq_wf.alignment_workflow:main"
 get-ribo-periodic = "ribotools.htseq_wf.get_ribo_periodic:main"
 keep-ribo-periodic = "ribotools.htseq_wf.keep_ribo_periodic:main"
 call-htseq-count = "ribotools.htseq_wf.call_htseq_count:main"
+# DEA/TEA
+get-sample-table = "ribotools.scripts.__main__:get_sample_table"
+run-tea = "ribotools.scripts.__main__:run_tea"
+run-dea = "ribotools.scripts.__main__:run_dea"
 
-# TEA
-[tool.setuptools]
-script-files = [
-  "scripts/get-sample-table",
-  "scripts/run-tea",
-  "scripts/run-dea"
-]
-
+# discouraged - not portable to bioconda
+# [tool.setuptools]
+# script-files = [
+#   "scripts/get-sample-table",
+#   "scripts/run-tea",
+#   "scripts/run-dea"
+# ]
 [project.urls]
 Github = "https://github.com/eboileau/ribotools/"
 Issues = "https://github.com/eboileau/ribotools/issues"

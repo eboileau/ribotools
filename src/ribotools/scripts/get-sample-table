@@ -4,8 +4,10 @@
 # 1. <-config CONFIG> Yaml config file (same as used for run-htseq-workflow)
 # 2. [{-ribo,-rna}]   Prepare only table for Ribo-seq or RNA-seq samples - default both
 
-library(yaml)
-library(dplyr)
+print("Loading R libraries...")
+
+suppressMessages(library(yaml))
+suppressMessages(library(dplyr))
 
 # defaults
 base.loc <- "count-tables"

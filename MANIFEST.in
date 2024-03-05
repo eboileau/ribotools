@@ -1,2 +1,4 @@
 include README.md
-recursive-include scripts *
+include src/ribotools/scripts/get-sample-table
+include src/ribotools/scripts/run-tea
+include src/ribotools/scripts/run-dea
