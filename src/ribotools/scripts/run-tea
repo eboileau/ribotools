@@ -12,17 +12,19 @@
 # 8. [-batch]                If present, uses "batch" from sample table
 # 9. [-filter]               If present, filter features with 0 counts in each assay separately
 
-library(yaml)
-library(DESeq2)
-library(IHW)
-library(ashr)
-library(apeglm)
+print("Loading R libraries...")
 
-library(dplyr)
-library(tibble)
-library(purrr)
+suppressMessages(library(yaml))
+suppressMessages(library(DESeq2))
+suppressMessages(library(IHW))
+suppressMessages(library(ashr))
+suppressMessages(library(apeglm))
 
-library(openxlsx)
+suppressMessages(library(dplyr))
+suppressMessages(library(tibble))
+suppressMessages(library(purrr))
+
+suppressMessages(library(openxlsx))
 
 # ---------------------------------------------------------
 ## Functions
