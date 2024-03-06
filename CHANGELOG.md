@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.3]
+
+### Added
+
+- TEA/DEA scripts
+- PyPI deploy
+- Documentation (RTD)
+
+### Fixed
+
+- Discouraged "script-files" (wrapped as module for packaging)
+- Import
+
 ## [1.0.0]
 
 ### Changed

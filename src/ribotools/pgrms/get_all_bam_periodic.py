@@ -9,10 +9,10 @@ import argparse
 import logging
 import yaml
 
-import pbiotool.misc.logging_utils as logging_utils
-import pbiotool.misc.shell_utils as shell_utils
+import pbiotools.misc.logging_utils as logging_utils
+import pbiotools.misc.shell_utils as shell_utils
 
-import pbiotool.utils.bam_utils as bam_utils
+import pbiotools.utils.bam_utils as bam_utils
 
 import rpbp.ribo_utils.utils as ribo_utils
 import rpbp.ribo_utils.filenames as filenames
