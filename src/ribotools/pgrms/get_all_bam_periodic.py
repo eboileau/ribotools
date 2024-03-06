@@ -17,7 +17,7 @@ import pbiotools.utils.bam_utils as bam_utils
 import rpbp.ribo_utils.utils as ribo_utils
 import rpbp.ribo_utils.filenames as filenames
 
-import pproc.utils.cl_utils as clu
+import ribotools.utils.cl_utils as clu
 
 from rpbp.defaults import metagene_options
 
