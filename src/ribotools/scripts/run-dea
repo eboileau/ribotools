@@ -1,12 +1,12 @@
 #! /usr/bin/env Rscript
 
 # Usage: run-dea <-config CONFIG> [-lfcThreshold L2F] [-alpha ALPHA] [-symbolCol COLUMN] [-orfCol COLUMN_NUMBER] [-delim TAB/CSV] [-batch]
-# 1. <-config CONFIG>        Yaml config file (same as used for run-htseq-workflow)
+# 1. <-config CONFIG>        Yaml config file (e.g. config used for run-htseq-workflow)
 # 2. [-lfcThreshold L2F]     LFC threshold - default log2(1.2)
 # 3. [-alpha ALPHA]          FDR threshold - default 0.05
 # 4. [-symbolCol COLUMN]     Column for feature symbol/names to add to results - default 2
 # 5. [-orfCol COLUMN_NUMBER] Column for ORF type to add to results
-# 6. [-delim TAB/CSV]        Field separator character for read.table - default ""
+# 6. [-delim TAB/CSV]        Field separator character for read.table (only for count table) - default ""
 # 7. [-batch]                If present, uses "batch" from sample table
 
 print("Loading R libraries...")
@@ -47,13 +47,13 @@ run_analysis_fit_sub <- function(contrast, coldata, dds) {
     coef <- resultsNames(dds.sub)[length(resultsNames(dds.sub))]
     print(paste0("Testing for: ", coef, " @ lfcThreshold: ", lfcThreshold.set, " and alpha: ", alpha.set))
     res <- results(dds.sub,
-                   contrast=c("condition", num.condition, denom.condition), # name=coef,
+                   name=coef,
                    lfcThreshold=lfcThreshold.set,
                    altHypothesis=altHypothesis.set,
                    alpha=alpha.set,
                    filterFun=ihw)
     res$padj[is.na(res$padj)] <- 1
-    res <- lfcShrink(dds.sub, coef=coef, type="apeglm", res=res)
+    res <- lfcShrink(dds.sub, coef=coef, type="ashr", res=res)
 
     # write to disk
     write_results(dds.sub, res, as.character(contrast[3]))
@@ -199,7 +199,7 @@ if ("assay" %in% colnames(samples)) {
 from_htseq <- TRUE
 if (!is.null(params$count_table)) {
     from_htseq <- FALSE
-    counts <- read.delim(params$count_table, sep=",", row.names=1)
+    counts <- read.delim(params$count_table, sep=sep, row.names=1)
     print(paste0("Using ", params$count_table, " as count table..."))
 } else {
     # write tmp files to

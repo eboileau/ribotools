@@ -14,9 +14,9 @@ You first need to locate the output of ``summarize-rpbp-predictions``, in partic
 
     get-gtf-from-predictions bed out [options]
 
-where ``bed`` is the path to *<project_name>[.note][-unique][.filtered].predicted-orfs.bed.gz*, and ``out`` if the path to the GTF file to be created, *e.g.* *<project_name>[.note][-unique][.filtered].predicted-orfs.gtf*.
+where ``bed`` is the path to the BED12+ Ribo-seq ORFs, as described above, and ``out`` is the path to the GTF file to be created, *e.g.* *<project_name>[.note][-unique][.filtered].predicted-orfs.gtf*.
 
-This file contain all the Ribos-eq ORFs, with CDS and exon features, and additional attributes, such as ORF type.
+This file contain all the Ribo-seq ORFs, with CDS and exon features, and additional attributes, such as ORF type.
 
 You are now ready to call
 
@@ -35,13 +35,13 @@ Finally, you need to check the ``htseq-count`` output tables, to determine which
 
 .. code-block:: bash
 
-    run-tea -config CONFIG [-method LRT/deltaTE] [-lfcThreshold L2FC] [-alpha ALPHA] [-symbolCol COLUMN] [-orfCol COLUMN_NUMBER] [-delim TAB/CSV] [-batch] [-filter]
+    run-tea -config CONFIG [-method LRT/deltaTE] [-lfcThreshold L2FC] [-alpha ALPHA] -symbolCol 3 -orfCol 2 -delim TAB [-batch] [-filter]
 
 or
 
 .. code-block:: bash
 
-    run-dea -config CONFIG [-lfcThreshold L2FC] [-alpha ALPHA] [-symbolCol COLUMN] [-orfCol COLUMN_NUMBER] [-delim TAB/CSV] [-batch]
+    run-dea -config CONFIG [-lfcThreshold L2FC] [-alpha ALPHA] -symbolCol 3 -orfCol 2 -delim TAB [-batch]
 
 
 .. note::

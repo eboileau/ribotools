@@ -72,7 +72,7 @@ This will create a file named *sample-table<-project_name>.csv*, where ``project
 
 .. important::
 
-    Before proceeding further, always proof-read this file. If you have batches, you should add a columm to this file, and the header must be named *batch*. The assay column can be ignored.
+    Before proceeding further, always proof-read this file. If you have batches, you should add a columm to this file, and the header must be named *batch*. The assay column can be ignored, but if present, it must contain only one value *e.g.* ribo.
 
 
 General workflow
@@ -80,7 +80,7 @@ General workflow
 
 To estimate DE with data prepared from a different workflow, the sample table must conform to the **Ribotools** specs (that derive from **DESeq2**). In it's current format, it must have, minimally, the following header ``sampleName,condition``, in this same order (see above). The ``condition`` must match the list of ``contrasts`` from the config. The format should be CSV.
 
-The count table must include integer counts for RPFs, and column names (samples) must match ``sampleName`` from the sample table. The first column must be feature ids or symbols. The format should be CSV.
+The count table must include integer counts for RPFs, and column names (samples) must match ``sampleName`` from the sample table. The first column must be feature ids or symbols.
 
 The configuration must include additionally the following keys:
 
@@ -97,12 +97,12 @@ To estimate TE
 
     run-dea <-config CONFIG> [-lfcThreshold L2FC] [-alpha ALPHA] [-symbolCol COLUMN] [-orfCol COLUMN_NUMBER] [-delim TAB/CSV] [-batch]
 
-* ``-config CONFIG`` Yaml config file, same as used for ``run-htseq-workflow``, or mock config file with keys as described above,
+* ``-config CONFIG`` Yaml config file, *e.g.* config used for ``run-htseq-workflow``, or mock config file with keys as described above.
 * ``-lfcThreshold L2FC`` Default: log2(1.2). Used to call *results*.
 * ``-alpha ALPHA`` Default: 0.05. Used to call *results*, and as threshold for classifying features.
 * ``-symbolCol`` Default: 2. HTSeq (``htseq-count``) output table column with feature symbols or names.
 * ``-orfCol`` Default: None. HTSeq (``htseq-count``) output table column with extra ORF type attribute.
-* ``-delim`` Default: "". The field separator character for ``read.table`` (TAB for ``"\t"``, and CSV for ``,``).
+* ``-delim`` Default: "". The field separator character for ``read.table`` (TAB for ``"\t"``, and CSV for ``,``). Only for count table.
 * ``-batch`` Default: None. Flag to tell the program to use a *batch* column from the sample table (see note above).
 
 In general, ``run-dea -config CONFIG -batch`` is sufficient. If you want to estimate DE for Ribo-seq ORFs features instead of genes, these options ``-symbolCol COLUMN``, ``-orfCol COLUMN_NUMBER``, and  ``-delim TAB/CSV`` might be necessary. See `How to estimate TE using Ribo-seq ORFs <ribo-seq-orfs.html>`_ for details.

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- 'coef' should specify same coefficient as in results 'res'
+
+### Changed
+
+- Using 'ashr' instead of 'apeglm'
+
 ## [1.0.3]
 
 ### Added

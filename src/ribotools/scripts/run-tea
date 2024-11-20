@@ -2,13 +2,13 @@
 
 # Usage: run-tea <-config CONFIG> [-method {LRT,deltaTE}] [-lfcThreshold L2F] [-alpha ALPHA]
 #                [-symbolCol COLUMN] [-orfCol COLUMN_NUMBER] [-delim TAB/CSV] [-batch] [-filter]
-# 1. <-config CONFIG>        Yaml config file (same as used for run-htseq-workflow)
+# 1. <-config CONFIG>        Yaml config file (e.g. config used for run-htseq-workflow)
 # 2. [-method {LRT,deltaTE}] Method to use - default LRT
 # 3. [-lfcThreshold L2F]     LFC threshold - default log2(1.2)
 # 4. [-alpha ALPHA]          FDR threshold - default 0.05
 # 5. [-symbolCol COLUMN]     Column for feature symbol/names to add to results - default 2
 # 6. [-orfCol COLUMN_NUMBER] Column for ORF type to add to results
-# 7. [-delim TAB/CSV]        Field separator character for read.table - default ""
+# 7. [-delim TAB/CSV]        Field separator character for read.table (only for count table) - default ""
 # 8. [-batch]                If present, uses "batch" from sample table
 # 9. [-filter]               If present, filter features with 0 counts in each assay separately
 
@@ -49,7 +49,6 @@ run_analysis_fit_sub_lrt <- function(contrast, coldata, dds, model) {
 
     ## use lfcShrink
     ## use "ashr" instead of "apeglm", which only takes coef (unless we rewrite the design...)
-    ## with "ashr", we cannot use lfcThreshold
 
     ## main effect of condition on rna counts (interaction terms for base levels are absorbed by the intercept)
     coef <- resultsNames(dds.sub)[3] # contrast=c("condition", num, denom)
@@ -409,7 +408,7 @@ samples$assay <- factor(samples$assay)
 from_htseq <- TRUE
 if (!is.null(params$count_table)) {
     from_htseq <- FALSE
-    counts <- read.delim(params$count_table, sep=",", row.names=1)
+    counts <- read.delim(params$count_table, sep=sep, row.names=1)
     print(paste0("Using ", params$count_table, " as count table..."))
 } else {
     # write tmp files to

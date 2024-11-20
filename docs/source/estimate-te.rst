@@ -91,7 +91,7 @@ General workflow
 
 To estimate TE with data prepared from a different workflow, the sample table must conform to the **Ribotools** specs (that derive from **DESeq2**). In it's current format, it must have, minimally, the following header ``sampleName,assay,condition``, in this same order (see above). The ``assay`` is either *ribo* or *rna*, and the ``condition`` must match the list of ``contrasts`` from the config. The format should be CSV.
 
-The count table must include integer counts for both RNA and RPFs, and column names (samples) must match ``sampleName`` from the sample table. The first column must be feature ids or symbols. The format should be CSV.
+The count table must include integer counts for both RNA and RPFs, and column names (samples) must match ``sampleName`` from the sample table. The first column must be feature ids or symbols.
 
 The configuration must include additionally the following keys:
 
@@ -129,13 +129,13 @@ To estimate TE
 
     run-tea <-config CONFIG> [-method {LRT,deltaTE}] [-lfcThreshold L2FC] [-alpha ALPHA] [-symbolCol COLUMN] [-orfCol COLUMN_NUMBER] [-delim TAB/CSV] [-batch] [-filter]
 
-* ``-config CONFIG`` Yaml config file, same as used for ``run-htseq-workflow``, or mock config file with keys as described above,
+* ``-config CONFIG`` Yaml config file, *e.g* config used for ``run-htseq-workflow``, or mock config file with keys as described above.
 * ``-method {LRT,deltaTE}`` Default: LRT.
 * ``-lfcThreshold L2FC`` Default: log2(1.2). Used to call *results*.
 * ``-alpha ALPHA`` Default: 0.05. Used to call *results*, and as threshold for classifying features.
 * ``-symbolCol`` Default: 2. HTSeq (``htseq-count``) output table column with feature symbols or names.
 * ``-orfCol`` Default: None. HTSeq (``htseq-count``) output table column with extra ORF type attribute.
-* ``-delim`` Default: "". The field separator character for ``read.table`` (TAB for ``"\t"``, and CSV for ``,``).
+* ``-delim`` Default: "". The field separator character for ``read.table`` (TAB for ``"\t"``, and CSV for ``,``). Only for count table.
 * ``-batch`` Default: None. Flag to tell the program to use a *batch* column from the sample table (see note above).
 * ``-filter`` Default: None. Flag to tell the program to filter features with 0 counts in each assay separately. By default, independent filtering is applied, *i.e.* there is no need to perform additional filtering.
 
