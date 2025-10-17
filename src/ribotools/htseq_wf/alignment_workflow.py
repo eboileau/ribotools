@@ -115,7 +115,6 @@ def main():
         "star_index",
         "genome_base_path",
         "genome_name",
-        "fasta",
         "gtf",
     ]
 

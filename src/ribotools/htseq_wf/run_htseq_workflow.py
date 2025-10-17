@@ -180,7 +180,6 @@ def main():
         "star_index",
         "genome_base_path",
         "genome_name",
-        "fasta",
         "gtf",
     ]
 
@@ -260,9 +259,11 @@ def main():
             )
 
             job_id = [
-                job_ids_periodic[sample_name]
-                if job_ids_periodic.get(sample_name, None)
-                else job_ids_mapping[sample_name]
+                (
+                    job_ids_periodic[sample_name]
+                    if job_ids_periodic.get(sample_name, None)
+                    else job_ids_mapping[sample_name]
+                )
             ]
             slurm.check_sbatch(cmd, args=args, dependencies=job_id)
 
@@ -276,9 +277,11 @@ def main():
             if args.htseq_options is not None:
                 # replace option used for ribo
                 args.htseq_options = [
-                    opt
-                    if "--stranded" not in opt
-                    else re.sub("yes|no|reverse", args.stranded, opt)
+                    (
+                        opt
+                        if "--stranded" not in opt
+                        else re.sub("yes|no|reverse", args.stranded, opt)
+                    )
                     for opt in args.htseq_options
                 ]
             else:
