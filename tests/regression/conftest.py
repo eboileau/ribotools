@@ -4,6 +4,8 @@ import sys
 REF_DATA_URL = "https://data.dieterichlab.org/s/Rqi67d2RHs2zBJM/download"
 REF_LOC = "hiPSC-CM-chr1-example"
 REF_CONFIG = "hiPSC-CM-test.yaml"
+REF_SAMPLE_TBL = "sample-table.csv"
+REG_CLASSES = ["buffered.txt", "exclusive.txt", "forwarded.txt", "intensified.txt"]
 
 
 @pytest.fixture(scope="session")
@@ -53,11 +55,16 @@ def getf_config(data_loc):
     config.write_text(
         config.read_text().replace("/path/to/your/hiPSC-CM-example", loc.as_posix())
     )
+    sample_tbl = Path(loc, "reference", "tea-results", REF_SAMPLE_TBL)
+    sample_tbl.write_text(
+        sample_tbl.read_text().replace("/path/to/your/hiPSC-CM-example", loc.as_posix())
+    )
 
     # reference (known) paths from example dataset, keep default options
     ref_config = yaml.load(open(config), Loader=yaml.FullLoader).copy()
-    ref_config["riboseq_data"] = Path(loc, "reference").as_posix()
-    ref_config["rnaseq_data"] = Path(loc, "reference").as_posix()
+    ref_config["riboseq_data"] = Path(loc, "reference", "riboseq-results").as_posix()
+    ref_config["rnaseq_data"] = Path(loc, "reference", "rnaseq-results").as_posix()
+    ref_config["tea_data"] = Path(loc, "reference", "tea-results").as_posix()
     ref_config["ribo_gtf"] = Path(loc, "input", "ribo-ORFs.chr1.gtf").as_posix()
 
     return (config, ref_config)
@@ -66,6 +73,8 @@ def getf_config(data_loc):
 @pytest.fixture(scope="session")
 def get_pipeline(getf_config):
     """Run `run-htseq-workflow`.
+
+    Also run `get-sample-table`.
 
     Parameters
     ----------
@@ -101,6 +110,13 @@ def get_pipeline(getf_config):
     )
     shell_utils.check_call(cmd, call=True, raise_on_error=True)
 
+    cmd = f"get-sample-table -config {config.as_posix()}"
+    shell_utils.check_call(cmd, call=True, raise_on_error=True)
+
+    opts = "-symbolCol 3 -orfCol 2 -delim TAB -lfcThreshold 0 -alpha .99"
+    cmd = f"run-tea -config {config.as_posix()} {opts}"
+    shell_utils.check_call(cmd, call=True, raise_on_error=True)
+
     return config, ref_config
 
 
@@ -108,8 +124,9 @@ def get_pipeline(getf_config):
 def getf_pipeline(get_pipeline):
     """Get the output file names.
 
-    Only count tables (with periodic lengths)
-    for the current output and the reference dataset.
+    Only count tables (with periodic lengths in file names)
+    for the current output and the reference dataset, and
+    the sample table.
 
     Parameters
     ----------
@@ -121,6 +138,7 @@ def getf_pipeline(get_pipeline):
     :obj:`list`: tuples of output files
     """
     import yaml
+    from pathlib import Path
     import rpbp.ribo_utils.utils as ribo_utils
     import ribotools.utils.filenames as filenames
 
@@ -139,7 +157,7 @@ def getf_pipeline(get_pipeline):
 
     def populate(name, lf, lc, key=None):
         note = lc.get("note", None)
-        is_unique = not f"keep_{key}seq_multimappers" not in lc
+        is_unique = f"keep_{key}seq_multimappers" not in lc
         sample_name_map = filenames.get_sample_name_map(lc, key)
 
         if key == "ribo":
@@ -172,5 +190,15 @@ def getf_pipeline(get_pipeline):
 
     files = [file for file in lfiles[0]]
     ref_files = [file for file in lfiles[1]]
+
+    files.append(Path(config["tea_data"], REF_SAMPLE_TBL).as_posix())
+    ref_files.append(Path(ref_config["tea_data"], REF_SAMPLE_TBL).as_posix())
+
+    contrast = [*config["contrasts"]][0]
+    for reg_class in REG_CLASSES:
+        files.append(Path(config["tea_data"], "LRT", contrast, reg_class).as_posix())
+        ref_files.append(
+            Path(ref_config["tea_data"], "LRT", "d5_vs_d1", reg_class).as_posix()
+        )
 
     return (files, ref_files)
