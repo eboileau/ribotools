@@ -7,13 +7,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Requires rpbp >= 4.0.0
+- Using 'ashr' instead of 'apeglm'
+
+### Added
+
+- Support for Python 3.11, 3.12, and 3.13
+
 ### Fixed
 
 - 'coef' should specify same coefficient as in results 'res'
 
-### Changed
+### Removed
 
-- Using 'ashr' instead of 'apeglm'
+- Support for Python 3.7, 3.8 (EOL), 3.9 and 3.10
 
 ## [1.0.3]
 

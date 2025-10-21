@@ -4,9 +4,9 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - rpbp
+  - rpbp>=4.0.0
   - htseq
-  - r-base=4.2.3
+  - r-base=4.4.3
   - r-r.utils
   - r-devtools
   - r-tidyverse
