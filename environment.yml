@@ -7,12 +7,13 @@ dependencies:
   - rpbp>=4.0.0
   - htseq
   - r-base=4.4.3
-  - r-r.utils
-  - r-devtools
-  - r-tidyverse
-  - r-openxlsx
-  - r-yaml
-  - r-ashr
   - bioconductor-ihw
   - bioconductor-apeglm
   - bioconductor-deseq2
+  - r-argparser
+  - r-ashr
+  - r-devtools
+  - r-openxlsx
+  - r-r.utils
+  - r-tidyverse
+  - r-yaml

@@ -110,11 +110,11 @@ def get_pipeline(getf_config):
     )
     shell_utils.check_call(cmd, call=True, raise_on_error=True)
 
-    cmd = f"get-sample-table -config {config.as_posix()}"
+    cmd = f"get-sample-table {config.as_posix()}"
     shell_utils.check_call(cmd, call=True, raise_on_error=True)
 
-    opts = "-symbolCol 3 -orfCol 2 -delim TAB -lfcThreshold 0 -alpha .99"
-    cmd = f"run-tea -config {config.as_posix()} {opts}"
+    opts = "--orfCol 2 --symbolCol 3 --lfcThreshold 0 --alpha .99"
+    cmd = f"run-tea {opts} {config.as_posix()}"
     shell_utils.check_call(cmd, call=True, raise_on_error=True)
 
     return config, ref_config
