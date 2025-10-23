@@ -1,9 +1,9 @@
 #! /usr/bin/env Rscript
 
 # Usage: get-sample-table [--help] [--ribo] [--rna] [--dea] config
-# 1. <config>         Yaml config file (same as used for 'run-htseq-workflow')
-# 2. [{--ribo,--rna}] Prepare table for Ribo-seq or RNA-seq samples only (default: both)
-# 3. [--dea]          Use config key 'dea_data' (default: 'tea_data')
+# config           Yaml config file (same as used for 'run-htseq-workflow')
+# [{--ribo,--rna}] Prepare table for Ribo-seq or RNA-seq samples only (default: both)
+# [--dea]          Use config key 'dea_data' (default: 'tea_data')
 
 suppressPackageStartupMessages(library(argparser))
 suppressPackageStartupMessages(library(yaml))
@@ -33,7 +33,8 @@ get_tbl <- function(key, params, loc) {
     key.map <- "riboseq_sample_name_map"
   }
   if (!check_keys(keys, names(params), all)) {
-    stop(paste0("One or more keys were not found: ", paste(keys, collapse=", ")), call.=FALSE)
+    cat("Error: one or more keys were not found: ", paste(keys, collapse=", "), "\nExecution halted\n")
+    quit(save = "no", status = 0, runLast = FALSE)
   }
   if (!is.null(params[[key.map]])) {
     table <- params[[key.map]] %>%
@@ -53,14 +54,13 @@ get_tbl <- function(key, params, loc) {
       table <- table %>% rowwise() %>%
         mutate(fileName=files[grep(sampleName, files)])
     }, error = function(e) {
-      print(
-        paste0(
-          "Unable to assign 'fileName' from 'sampleName': ",
+      cat(
+          "Warning: unable to assign 'fileName' from 'sampleName':\n",
           "Values from ",
           key.used,
           " are not found in file names under ",
-          dirloc
-        )
+          dirloc,
+          "\n"
       )
     })
   }
@@ -99,11 +99,12 @@ if (args$dea) {
    key <- "dea_data"
 }
 if (!check_keys(key, names(params), all)) {
-  stop(paste0("Key not found: ", key), call.=FALSE)
+  cat("Error: key not found: ", key, "\nExecution halted\n")
+  quit(save = "no", status = 0, runLast = FALSE)
 }
 dirloc.out <- params[[key]]
 created <- ifelse(!dir.exists(dirloc.out), dir.create(dirloc.out, recursive=TRUE), FALSE)
-if (!created) { print(paste0("Using existing directory ", dirloc.out, " ...")) }
+if (!created) { cat("Info: using existing directory ", dirloc.out, " ...\n") }
 
 # rna
 if (args$rna) {

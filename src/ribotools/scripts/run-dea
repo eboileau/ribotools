@@ -2,14 +2,14 @@
 
 # Usage: run-dea [--help] [--batch] [--lfcThreshold LFCTHRESHOLD] [--alpha ALPHA] [--symbolCol SYMBOLCOL]
 # [--orfCol ORFCOL] [--delim {TAB,CSV}] [--lfcShrinkMethod {apeglm,ashr}] config
-# 1. <config>                          Yaml config file (e.g. config used for 'run-htseq-workflow')
-# 2. [--lfcThreshold LFCTHRESHOLD]     LFC threshold (default: log2(1.2))
-# 3. [--alpha ALPHA]                   FDR threshold (default: 0.05)
-# 4. [--symbolCol SYMBOLCOL]           Column for features (symbol/names) -  HTSeq workflow only (default: 2)
-# 5. [--orfCol ORFCOL]                 Column for ORF types -  HTSeq workflow only
-# 6. [--delim {TAB,CSV}]               Field separator for the count table (default: TAB)
-# 7. [--lfcShrinkMethod {apeglm,ashr}] LFC shrinkage method (default: apeglm)
-# 7. [--batch]                         Use 'batch' from sample table
+# config                            Yaml config file (e.g. config used for 'run-htseq-workflow')
+# [--batch]                         Use 'batch' from sample table
+# [--lfcThreshold LFCTHRESHOLD]     LFC threshold (default: log2(1.2))
+# [--alpha ALPHA]                   FDR threshold (default: 0.05)
+# [--symbolCol SYMBOLCOL]           Column for features (symbol/names) -  HTSeq workflow only (default: 2)
+# [--orfCol ORFCOL]                 Column for ORF types -  HTSeq workflow only
+# [--delim {TAB,CSV}]               Field separator for the count table (default: TAB)
+# [--lfcShrinkMethod {apeglm,ashr}] LFC shrinkage method (default: apeglm)
 
 suppressPackageStartupMessages(library(argparser))
 suppressPackageStartupMessages(library(yaml))
@@ -46,7 +46,7 @@ run_analysis_fit_sub <- function(contrast, coldata, dds) {
   dds.sub <- DESeq(dds.sub)
 
   coef <- resultsNames(dds.sub)[length(resultsNames(dds.sub))]
-  print(paste0("Testing for: ", coef, " @ lfcThreshold: ", lfcThreshold.set, " and alpha: ", alpha.set))
+  cat("Testing for: ", coef, " @ lfcThreshold: ", lfcThreshold.set, " and alpha: ", alpha.set, "\n")
   res <- results(dds.sub,
                  name=coef,
                  lfcThreshold=lfcThreshold.set,
@@ -92,13 +92,13 @@ write_results <- function(dds, res, contrast) {
   writeDataTable(wb, sheet=1, x=res)
 
   created <- ifelse(!dir.exists(dirloc.out), dir.create(dirloc.out, recursive=TRUE), FALSE)
-  if (!created) { print(paste0("Using existing directory ", dirloc.out, " ...")) }
+  if (!created) { cat("Info: using existing directory ", dirloc.out, " ...\n") }
 
   dirloc.sub <- file.path(dirloc.out, contrast, fsep=.Platform$file.sep)
   created <- ifelse(!dir.exists(dirloc.sub), dir.create(dirloc.sub, recursive=TRUE), FALSE)
-  if (!created) { print(paste0("Using existing directory ", dirloc.sub, " ...")) }
+  if (!created) { cat("Info: using existing directory ", dirloc.sub, " ...\n") }
   filen <- file.path(dirloc.sub, paste0(contrast, ".xlsx"), fsep=.Platform$file.sep)
-  print(paste("Writing results to: ", filen, sep=""))
+  cat("Info: writing results to: ", filen, "\n")
   saveWorkbook(wb, filen, overwrite = TRUE)
 }
 
@@ -180,7 +180,8 @@ alpha.set <- args$alpha
 params <- yaml::read_yaml(args$config)
 keys <- c("dea_data", "contrasts")
 if (!check_keys(keys, names(params), all)) {
-  stop(paste0("One or more keys were not found: ", paste(keys, collapse=", ")), call.=FALSE)
+  cat("Error: one or more keys were not found: ", paste(keys, collapse=", "), "\nExecution halted\n")
+  quit(save = "no", status = 0, runLast = FALSE)
 }
 
 # output directory
@@ -197,10 +198,11 @@ if (!is.null(params$sample_table)) {
   }
   filen <- file.path(dirloc.out, paste0("sample-table", project, ".csv"))
 }
-print(paste0("Using ", filen, " as sample table..."))
+cat("Info: using ", filen, " as sample table...\n")
 samples <- read.delim(filen, sep=",")
 if (ncol(samples)==1) {
-  stop("The sample table does not appear to be CSV-formatted", call.=FALSE)
+  cat("Error: sample table does not appear to be CSV-formatted\nExecution halted\n")
+  quit(save = "no", status = 0, runLast = FALSE)
 }
 
 # wrangle
@@ -210,7 +212,8 @@ if ("assay" %in% colnames(samples)) {
   samples$assay <- tolower(samples$assay)
   samples$assay <- factor(samples$assay)
   if (nlevels(samples$assay) > 1) {
-    stop("Sample table contains more than 1 level for assay!\n", call.=FALSE)
+    cat("Error: sample table contains more than 1 level for assay\nExecution halted\n")
+    quit(save = "no", status = 0, runLast = FALSE)
   }
   samples$assay <- NULL
 }
@@ -218,7 +221,7 @@ from_htseq <- TRUE
 if (!is.null(params$count_table)) {
   from_htseq <- FALSE
   counts <- read.delim(params$count_table, sep=sep, row.names=1, check.names=FALSE)
-  print(paste0("Using ", params$count_table, " as count table..."))
+  cat("Info: using ", params$count_table, " as count table...\n")
 } else {
   # write tmp files to
   tmp.loc <- uuid::UUIDgenerate()
@@ -234,18 +237,18 @@ if (!is.null(params$count_table)) {
 }
 # check if we use batch
 if (args$batch) {
-  msg <- "Adding batch effect..."
+  msg <- "Info: adding batch effect...\n"
   tryCatch({
     samples$batch <- factor(samples$batch)
   }, error = function(e) {
-    msg <- "Ignoring '--batch': Use 'batch' as column header, and at least 2 levels"
+    msg <- "Warning: '--batch' set to FALSE: use 'batch' as column header, and at least 2 levels\n"
     args$batch <- FALSE
   })
   if (nlevels(samples$batch)<2) {
-    msg <- "Ignoring '--batch': Use 'batch' as column header, and at least 2 levels"
+    msg <- "Warning: '--batch' set to FALSE: use 'batch' as column header, and at least 2 levels\n"
     args$batch <- FALSE
   }
-  print(msg)
+  cat(msg)
 }
 # create DESEq data object
 model <- ~condition
@@ -276,7 +279,8 @@ if (from_htseq) {
 stopifnot(all(samples$sampleName == colnames(ddsAll)))
 
 ## fit contrasts
+cat("Fitting contrasts...\n")
 contrasts <- data.frame(t(sapply(params$contrast, c)))
 contrasts$name <- rownames(contrasts)
 apply(contrasts, 1, run_analysis_fit_sub, coldata=samples, dds=ddsAll)
-print("Done!")
+cat("... done!\n")
