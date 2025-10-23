@@ -2,9 +2,9 @@
 
 NOTE: Modifying the default parameter values set in this file
 will have NO effect. To override a given parameter value, you must
-either provide it via command argument when calling the Rp-Bp pipeline,
+either provide it via command argument when calling the pipeline,
 or else set the desired value in the configuration file. Refer to
-https://rp-bp.readthedocs.io/en/latest/usage-instructions.html
+https://ribotools.readthedocs.io/en/latest/defaults.html
 
 Default options for external programs (Flexbar, STAR) are
 overridden via command line.
@@ -17,7 +17,7 @@ Processing options (parallel processing, logging options) are given via
 command line.
 
 The htseq-count options must be passed via the [--htseq-options].
-In addition, when passing [--run-all], use [--stranded] to override
+In addition, when passing [--run-all], use [--rna-stranded] to override
 default htseq_options.
 
 stranded=yes: read has to be mapped to the same strand as the feature

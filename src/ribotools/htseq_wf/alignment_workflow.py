@@ -1,18 +1,13 @@
 #! /usr/bin/env python3
 
-"""Provide wrapper for general alignment workflow.
+"""Process Ribo- and/or RNA-seq reads.
 
-(1) Trim adapters using Flexbar.
-(2) Remove rRNA, tRNA, etc. using Bowtie 2.
-(3) Align reads to the genome (default) using STAR.
+1. Trim adapters using Flexbar.
+2. Remove rRNA, tRNA, etc. using Bowtie2.
+3. Align reads using STAR.
 
-Note* Bowtie 2 and STAR indices must already be available.
-      For mapping with STAR, annotations are used on the fly.
-
-      This script is a generalisation of create-base-genome-profile
-      from the rpbp package.
+cf. 'create-base-genome-profile' (rpbp package).
 """
-
 
 import sys
 import argparse
@@ -49,40 +44,33 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    """Process Ribo- and/or RNA-seq reads."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="""Wrapper script for a general RNA- or
-        Ribo-Seq workflow: flexbar -> bowtie2 -> STAR. File names and directory structures
-        follow the nomenclature used in Rp-Bp.""",
+        description="""Process Ribo- and/or RNA-seq reads.
+        File names and directory structure follow the Rp-Bp nomenclature.""",
     )
-
     parser.add_argument("seq", choices=["rna", "ribo"])
-
     parser.add_argument("raw_data", help="The raw fastq[.gz] file.")
-
     parser.add_argument("config", help="The yaml config file.")
-
     parser.add_argument("name", help="The name of the dataset.")
-
     parser.add_argument(
         "--trim-rna-to-max-fragment-size",
-        help="""Flag: trim RNA post
-        adapter removal using max fragment size from the matching Ribo-seq sample. Note* At least
-        the "periodic-offsets" file must be available. The config file must also include
-        "matching_samples" and the path to the Ribo-seq config must be given [--ribo-config]).
-        If the [--post-trim-length] option was passed via [flexbar-options], it will
-        silently override this option.""",
+        help="""Trim RNA post adapter removal using max fragment size
+        from matching Ribo-seq samples. Required: the "periodic-offsets"
+        files, the "matching_samples" key in the config, and the option
+        [--ribo-config]. If the [--post-trim-length] option is passed
+        via [--flexbar-options], it will silently override this option.
+        For RNA-seq only.""",
         action="store_true",
     )
-
     parser.add_argument(
         "--ribo-config",
-        help="""Optional argument: the Ribo-seq config file
+        help="""The Ribo-seq config file
         if using [--trim-rna-to-max-fragment-size].""",
         required="--trim-rna-to-max-fragment-size" in sys.argv,
         type=str,
     )
-
     clu.add_file_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     logging_utils.add_logging_options(parser)
@@ -139,7 +127,7 @@ def main():
         if args.trim_rna_to_max_fragment_size:
 
             ribo_config = yaml.load(open(args.ribo_config), Loader=yaml.FullLoader)
-            is_unique_ribo = not ("keep_riboseq_multimappers" in ribo_config)
+            is_unique_ribo = "keep_riboseq_multimappers" not in ribo_config
 
             matching_ribo_sample = config["matching_samples"][args.name]
             try:
@@ -155,19 +143,18 @@ def main():
                              [trim-rna-to-max-fragment-size] option was given!"""
                     logger.critical(msg)
                     return
-            except:
-                # presumably missing Ribo-seq sample
+            except TypeError:
+                # missing Ribo-seq sample
                 # name: !!int value is given
-                lengths = []
-                lengths.append(matching_ribo_sample)
+                lengths = [matching_ribo_sample]
 
-            max_length = max([int(l) for l in lengths])
+            max_length = max([int(pl) for pl in lengths])
             filename_length = max_length
 
-            # ask flexbar to trim to specified read length from 3' end after removal
-            # if called from 'run-htseq-worflow', we are fine, but if called independently
-            # and ['post-trim-length'] is passed via [flexbar-options], then it will
-            # override this value silently
+            # trim to specified read length from 3' end after removal
+            # if called from 'run-htseq-worflow', we are fine, but if
+            # called independently and ['post-trim-length'] is passed
+            # via [flexbar-options], then it will override this value silently
             flexbar_options["post-trim-length"] = max_length
 
     else:

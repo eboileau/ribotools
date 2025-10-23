@@ -98,7 +98,7 @@ def get_pipeline(getf_config):
         "--trim-rna-to-max-fragment-size  "
         '--star-options "--quantMode GeneCounts" '
         '--htseq-options "--idattr orf_id" "--additional-attr orf_type" "--additional-attr gene_name" "--stranded yes" '
-        "--stranded reverse "
+        "--rna-stranded reverse "
         f'--gtf {ref_config["ribo_gtf"]} '
         "--keep-intermediate-files "
     )
@@ -124,9 +124,10 @@ def get_pipeline(getf_config):
 def getf_pipeline(get_pipeline):
     """Get the output file names.
 
-    Only count tables (with periodic lengths in file names)
-    for the current output and the reference dataset, and
-    the sample table.
+    Count tables (with periodic lengths in file names)
+    for the current output and the reference dataset,
+    the sample table, and the txt files containing the
+    TE features.
 
     Parameters
     ----------
@@ -177,7 +178,7 @@ def getf_pipeline(get_pipeline):
 
         count_file = filenames.get_count_table(
             lc[f"{key}seq_data"],
-            sample_name_map[name],  # TODO
+            sample_name_map[name],
             is_unique=is_unique,
             length=lengths,
             note=note,

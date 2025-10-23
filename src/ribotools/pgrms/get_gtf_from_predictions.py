@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-"""Convert unique Rp-Bp ORF predictions to GTF"""
+"""Convert unique Rp-Bp ORF predictions to GTF."""
 
 import csv
 import argparse
@@ -26,8 +26,6 @@ def _clean_attrs(attrs):
 
 
 def _get_gtf_entries(bed_entry, source: str, id_attribute: str = "transcript_id"):
-    """Same as gtf_utils,, but pass the id_attribute!"""
-
     gtf_exons = gtf_utils._get_gtf_entries(bed_entry, "exon", source, id_attribute)
 
     if bed_entry["thick_start"] > -1:
@@ -42,6 +40,7 @@ def _get_gtf_entries(bed_entry, source: str, id_attribute: str = "transcript_id"
 
 
 def main():
+    """Convert Ribo-seq ORFs from BED12+ to GTF."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="""Convert Rp-Bp ORF predictions (BED12+) into GTF. The
@@ -49,7 +48,6 @@ def main():
         GTF entries. Only creates "exon" and "CDS" entries. Additional
         columns are included as attributes.""",
     )
-
     parser.add_argument(
         "bed",
         help="The bed12 file. It must conform to the "
@@ -59,7 +57,6 @@ def main():
         "out",
         help="The (output) gtf file.",
     )
-
     parser.add_argument(
         "-p",
         "--num-cpus",
@@ -67,7 +64,6 @@ def main():
         type=int,
         default=1,
     )
-
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
     logging_utils.update_logging(args)
@@ -86,7 +82,7 @@ def main():
         bed["orf_id"] = bed["id"]
         id_attribute = None
         source = "Rp-Bp"
-    except:
+    except KeyError:
         msg = (
             f"Input BED file {args.bed} has unexpected or missing fields! "
             f"Additional required fields are {ATTRS}. Truncating to BED12..."

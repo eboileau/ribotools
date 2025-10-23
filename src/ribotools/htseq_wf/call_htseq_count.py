@@ -1,13 +1,8 @@
 #! /usr/bin/env python3
 
-"""Call htseq-count on a list of samples
-
-Functions:
-    get_count_table
-"""
+"""Wrapper call to htseq-count."""
 
 import sys
-import os
 import argparse
 import logging
 import yaml
@@ -33,45 +28,38 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    """Call htseq-count for a given sample."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="""Call htseq-count and extract read counts.""",
+        description="""Call htseq-count.""",
     )
-
     parser.add_argument("seq", choices=["rna", "ribo"])
-
     parser.add_argument("config", help="The yaml config file.")
-
     parser.add_argument("name", help="The name of the dataset.")
-
     parser.add_argument(
         "--not-periodic",
-        help="""Flag: non-periodic read
-            lengths are NOT filtered out; this is to get the right file names
-            (length-). For Ribo-seq only.""",
+        help="""Non-periodic read lengths are NOT filtered out.
+        This flag is used to get the right file names (length-).
+        For Ribo-seq only.""",
         action="store_true",
     )
-
     parser.add_argument(
         "--ribo-config",
-        help="""Optional argument: the Ribo-seq config file
-            when seq is RNA and RNA reads have been trimmed to max fragment size from
-            the matching Ribo-seq sample. In addition, the RNA config file must include
-            "matching_samples". If not given, then the 'normal' RNA alignment files will
-            be used.""",
+        help="""The Ribo-seq config file if [--trim-rna-to-max-fragment-size]
+        was used. Required: the RNA config file must include
+        the "matching_samples" key. If not given, then the 'normal' RNA
+        alignment files are used.""",
         type=str,
         default=None,
     )
-
     parser.add_argument(
         "--gtf",
         help="""A different GTF file for abundance estimation, e.g. the output
-        of get-gtf-from-predictions (Ribo-seq ORFs). This is passed to
-        htseq-count and overrides the GTF file from the config.""",
+        of 'get-gtf-from-predictions' (Ribo-seq ORFs). This is passed to
+        'htseq-count' and overrides the GTF file from the config.""",
         type=str,
         dest="htseq_gtf",
     )
-
     clu.add_file_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     logging_utils.add_logging_options(parser)
@@ -109,7 +97,7 @@ def main():
 
     keep_key = "keep_" + str(args.seq) + "seq_multimappers"
     data_key = str(args.seq) + "seq_data"
-    is_unique = not (keep_key in config)
+    is_unique = keep_key not in config
 
     if args.seq.lower() == "ribo" and not args.not_periodic:
 
@@ -128,7 +116,7 @@ def main():
         utils.check_keys_exist(config, config_keys)
 
         ribo_config = yaml.load(open(args.ribo_config), Loader=yaml.FullLoader)
-        is_unique_ribo = not ("keep_riboseq_multimappers" in ribo_config)
+        is_unique_ribo = "keep_riboseq_multimappers" not in ribo_config
 
         matching_ribo_sample = config["matching_samples"][args.name]
         try:
@@ -144,13 +132,12 @@ def main():
                         [--ribo-config] option was given!"""
                 logger.critical(msg)
                 return
-        except:
-            # presumably missing Ribo-seq sample
+        except TypeError:
+            # missing Ribo-seq sample
             # name: !!int value is given
-            lengths = []
-            lengths.append(matching_ribo_sample)
+            lengths = [matching_ribo_sample]
 
-        lengths = str(max([int(l) for l in lengths]))
+        lengths = str(max([int(pl) for pl in lengths]))
 
     else:
         lengths = None

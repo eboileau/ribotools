@@ -1,16 +1,13 @@
 #! /usr/bin/env python3
 
-"""Provide wrapper for Ribo-seq workflow.
+"""Wrapper for periodicity estimation.
 
-(1) Extract metagene profiles.
-(2) Estimate metagene profiles Bayes factors.
-(3) Select periodic fragments and offsets.
-(4) Optionally, filter non-periodic read lengths from alignment file (BAM)
+1. Extract metagene profiles.
+2. Estimate metagene profiles Bayes factors.
+3. Select periodic fragments and offsets.
+4. Optionally, filter non-periodic read lengths from alignment file (BAM)
 
-Note* This is similar to create-orf-profiles from the Rp-Bp
-      pipeline, except that it starts from the alignment BAM files,
-      and it does not create the ORF profiles, and possibly filters
-      the final alignment BAM file.
+cf. 'create-orf-profiles' (rpbp package).
 """
 
 import sys
@@ -39,24 +36,21 @@ default_models_base = filenames.get_default_models_base()
 
 
 def main():
+    """Estimate periodicity for a given sample."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="""Wrapper script for a Ribo-seq workflow
-        starting from alignment files, based on Rp-Bp. File names and directory structures
-        follow the conventions used in Rp-Bp.""",
+        description="""Estimate periodicity. File names and
+        directory structure follow the Rp-Bp nomenclature.""",
     )
-
     parser.add_argument("config", help="The yaml config file.")
-
     parser.add_argument("name", help="The name of the dataset.")
-
     parser.add_argument(
         "--filter-non-periodic",
-        help="""Flag: if this flag is passed,
-        non-periodic read lengths will be filtered out of the final (BAM) file available.""",
+        help="""If this flag is passed,
+        non-periodic read lengths will be filtered out of the
+        final (BAM) file.""",
         action="store_true",
     )
-
     clu.add_file_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     logging_utils.add_logging_options(parser)

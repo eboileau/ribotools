@@ -1,10 +1,6 @@
 #! /usr/bin/env python3
 
-"""Filter read lengths out of a BAM file
-
-Functions:
-    filter_non_periodic_reads
-"""
+"""Filter read lengths out of a BAM file."""
 
 import argparse
 import logging
@@ -22,8 +18,7 @@ import ribotools.utils.cl_utils as clu
 logger = logging.getLogger(__name__)
 
 
-def filter_non_periodic_reads(alignments, lengths):
-
+def _filter_non_periodic_reads(alignments, lengths):
     for a in alignments:
         if a.qlen in lengths:
             yield a
@@ -32,16 +27,14 @@ def filter_non_periodic_reads(alignments, lengths):
 
 
 def main():
+    """Filter non-periodic read lengths."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="""Filter non-periodic read lengths out of
         a BAM file, but does not shift the start positions.""",
     )
-
     parser.add_argument("bam", help="The (BAM) file to filter.")
-
     parser.add_argument("out", help="The filtered (BAM) file.")
-
     parser.add_argument(
         "-l",
         "--lengths",
@@ -51,13 +44,11 @@ def main():
         default=[],
         nargs="+",
     )
-
     parser.add_argument(
         "--do-not-call",
         help="Do not execute the program (dry run).",
         action="store_true",
     )
-
     clu.add_file_options(parser)
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
@@ -80,7 +71,7 @@ def main():
     logger.info(msg)
 
     for a in tqdm.tqdm(
-        filter_non_periodic_reads(alignments, args.lengths),
+        _filter_non_periodic_reads(alignments, args.lengths),
         leave=True,
         file=sys.stdout,
         total=num_alignments,

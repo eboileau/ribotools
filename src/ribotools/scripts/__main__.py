@@ -5,14 +5,17 @@ from importlib.resources import files
 
 
 def get_sample_table():
+    """Run 'get-sample-table'."""
     _run("get-sample-table")
 
 
 def run_dea():
+    """Run 'run-dea'."""
     _run("run-dea")
 
 
 def run_tea():
+    """Run 'run-tea'."""
     _run("run-tea")
 
 

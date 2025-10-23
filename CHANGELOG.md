@@ -10,15 +10,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Requires rpbp >= 4.0.0
-- Using 'ashr' instead of 'apeglm'
+- Environment (R=4.4.3, argparser)
+- Scripts
+- Option `--stranded` to `--rna-stranded`
 
 ### Added
 
 - Support for Python 3.11, 3.12, and 3.13
+- Regression testing
 
 ### Fixed
 
 - 'coef' should specify same coefficient as in results 'res'
+- Allow both 'samples' and 'sample_name_map' in scripts
 
 ### Removed
 

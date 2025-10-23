@@ -1,9 +1,10 @@
 #! /usr/bin/env python3
 
-"""Wrapper for 'keep-ribo-periodic', to extract periodic
-periodic reads from existing BAM files (Rp-Bp pipeline).
-See 'run-htseq-workflow' for more details. No slurm option."""
+"""Wrapper call for 'keep-ribo-periodic'.
 
+Extract periodic reads from existing BAM files).
+See 'run-htseq-workflow' for more details. No slurm option.
+"""
 
 import argparse
 import logging
@@ -25,21 +26,20 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    """Extract periodic reads for a set of BAM files (samples)."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="""Extract periodic reads for a set of
-        existing BAM files. The periodic lengths and offsets file must be available.""",
+        existing BAM files. The periodic lengths and offsets files
+        must be available.""",
     )
-
     parser.add_argument("config", help="The yaml configuration file.")
-
     parser.add_argument(
         "--do-not-call",
         help="""If this flag is present, then the program
         will not be executed (but all commands will be printed).""",
         action="store_true",
     )
-
     clu.add_file_options(parser)
     logging_utils.add_logging_options(parser)
     args = parser.parse_args()
@@ -58,7 +58,7 @@ def main():
 
     # get config optional arguments
     note = config.get("note", None)
-    is_unique = not ("keep_riboseq_multimappers" in config)
+    is_unique = "keep_riboseq_multimappers" not in config
 
     for sample_name in config["riboseq_samples"].keys():
 

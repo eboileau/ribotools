@@ -1,50 +1,44 @@
 #! /usr/bin/env python3
 
-"""Provide functionalities for the command line parser.
-"""
+"""Provide functionalities for the command line parser."""
 
 
 def add_file_options(parser):
-
+    """Add general file options."""
     file_options = parser.add_argument_group("file options")
 
     file_options.add_argument(
         "-t",
         "--tmp",
-        help="""Optional argument: where to write
-        temporary files. If not specified, programs-specific tmp will be used.""",
+        help="""Where to write temporary files.
+        If not specified, programs-specific tmp will be used.""",
         default=None,
     )
 
     file_options.add_argument(
         "--overwrite",
-        help="""Flag: overwrite existing files.
-        Note that certain files may be re-created regardless of the presence or absence
-        of this flag. """,
+        help="""Overwrite existing files.""",
         action="store_true",
     )
 
     file_options.add_argument(
         "-k",
         "--keep-intermediate-files",
-        help="""Flag: unless this flag is
-        given, all intermediate files (such as discarded reads) will be deleted, unless the
+        help="""Unless this flag is given, all intermediate files
+        (such as discarded reads) will be deleted, unless the
         [--do-not-call] option is also given.""",
         action="store_true",
     )
 
 
 def get_file_options_string(args):
-
-    """Create a string containing the relevant flags and options based on the
-    file options from the arguments.
+    """Create a string from file options arguments.
 
     Parameters
     ----------
     args: argparse.Namespace
         The parsed arguments
     """
-
     overwrite_str = ""
     if args.overwrite:
         overwrite_str = "--overwrite"
@@ -65,31 +59,28 @@ def get_file_options_string(args):
 def add_htseq_options(parser):
     """Add options to a cmd parser to call htseq-count.
 
-    N.B. This is primarily intended for use with the htseq workflow.
-
     Parameters
     ----------
     parser: argparse.ArgumentParser
         The parser to which the options will be added
     """
-
     htseq_options = parser.add_argument_group("HTSeq options")
 
     htseq_options.add_argument(
         "--htseq-options",
-        help="""Optional argument: a space-delimited
-        list of options to pass to htseq-count. Each option must be quoted separately as in
+        help="""A space-delimited list of options to pass to htseq-count.
+        Each option must be quoted separately as in
         "--htseqOption value", using soft quotes, where '--htseqOption'
-        is the long parameter name from htseq-count and 'value' is the value given to this parameter.
-        If specified, htseq-count options will override default settings.""",
+        is the long parameter name from htseq-count and 'value' is the value
+        given to this parameter. If specified, htseq-count options will
+        override default settings.""",
         nargs="*",
         type=str,
     )
 
 
 def get_htseq_options_string(args):
-    """Extract the flags and options specified for htseq-count added with
-    add_htseq_options.
+    """Extract flags and options for htseq-count.
 
     Parameters
     ---------

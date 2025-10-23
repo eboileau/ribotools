@@ -155,6 +155,9 @@ parser <- add_argument(parser, "--lfcShrinkMethod", help="LFC shrinkage method {
 parser <- add_argument(parser, "--batch", help="Use 'batch' from sample table", flag=TRUE)
 args <- parse_args(parser)
 
+# force default to NULL
+if (is.na(args$orfCol)) { args$orfCol <- NULL }
+
 # delimiter
 if (tolower(args$delim) == "tab") {
   sep = "\t"

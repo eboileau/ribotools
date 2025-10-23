@@ -14,7 +14,6 @@ def to_df(filename):
     return pd.read_csv(filename, **kwargs)
 
 
-# test output of `run-htseq-workflow` and `get-sample-table`
 def test_pipeline(getf_pipeline):
 
     files, ref_files = getf_pipeline
