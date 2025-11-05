@@ -39,8 +39,7 @@ def _get_gtf_entries(bed_entry, source: str, id_attribute: str = "transcript_id"
     return gtf_exons[gtf_utils.gtf_field_names]
 
 
-def main():
-    """Convert Ribo-seq ORFs from BED12+ to GTF."""
+def get_parser():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="""Convert Rp-Bp ORF predictions (BED12+) into GTF. The
@@ -65,6 +64,13 @@ def main():
         default=1,
     )
     logging_utils.add_logging_options(parser)
+
+    return parser
+
+
+def main():
+    """Convert Ribo-seq ORFs from BED12+ to GTF."""
+    parser = get_parser()
     args = parser.parse_args()
     logging_utils.update_logging(args)
 

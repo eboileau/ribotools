@@ -46,7 +46,7 @@ For detailed installation instructions, refer to `Installation <installation.htm
 **Ribotools** quickstart
 ------------------------
 
-The alignment workflow wraps calls to `Flexbar <https://github.com/seqan/flexbar/wiki/Manual>`_, `Bowtie 2 <http://bowtie-bio.sourceforge.net/bowtie2/index.shtml>`_, and `STAR <https://github.com/alexdobin/STAR>`_. Indices must be available. **Rp-Bp** is installed as a dependency, and can be used to prepare the annotations, see :ref:`prepare_genome`.
+The alignment workflow wraps calls to `Flexbar <https://github.com/seqan/flexbar/wiki/Manual>`_, `Bowtie 2 <http://bowtie-bio.sourceforge.net/bowtie2/index.shtml>`_, and `STAR <https://github.com/alexdobin/STAR>`_. Indices must be available. **Rp-Bp** is installed as a dependency, and can be used to prepare the annotations, see :ref:`howto_annotation`.
 
 To generate count tables, simply call
 

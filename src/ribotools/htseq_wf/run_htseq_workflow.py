@@ -48,8 +48,7 @@ from rpbp.defaults import default_num_cpus, default_mem, star_executable
 logger = logging.getLogger(__name__)
 
 
-def main():
-    """Submit samples for abundance estimation."""
+def get_parser():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="""Submit samples for abundance estimation.
@@ -117,6 +116,13 @@ def main():
     pgrm_utils.add_star_options(parser, star_executable)
     pgrm_utils.add_flexbar_options(parser)
     clu.add_htseq_options(parser)
+
+    return parser
+
+
+def main():
+    """Submit samples for abundance estimation."""
+    parser = get_parser()
     args = parser.parse_args()
     logging_utils.update_logging(args)
 

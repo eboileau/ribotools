@@ -352,7 +352,7 @@ get_reg_layers <- function(res, dirloc, alpha) {
 ## Call
 
 # arguments
-parser <- arg_parser("Run differential expression (DE)", hide.opts = TRUE)
+parser <- arg_parser("Run translation efficiency (TE)", hide.opts = TRUE)
 parser <- add_argument(parser, "config", help="Yaml config file (same as used for 'run-htseq-workflow')", type="character")
 parser <- add_argument(parser, "--method", help="Method to use", type="character", default="LRT")
 parser <- add_argument(parser, "--lfcThreshold", help="LFC threshold", type="numeric", default=log(1.2))
