@@ -2,6 +2,8 @@
 
 """Convert unique Rp-Bp ORF predictions to GTF."""
 
+import sys
+import shlex
 import csv
 import argparse
 import logging
@@ -13,6 +15,7 @@ import pbiotools.utils.gtf_utils as gtf_utils
 import pbiotools.utils.bed_utils as bed_utils
 import pbiotools.misc.parallel as parallel
 import pbiotools.misc.pandas_utils as pandas_utils
+import pbiotools.misc.slurm as slurm
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +45,10 @@ def _get_gtf_entries(bed_entry, source: str, id_attribute: str = "transcript_id"
 def get_parser():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="""Convert Rp-Bp ORF predictions (BED12+) into GTF. The
-        "thick_start" and "thick_end" fields are used to determine the CDS
-        GTF entries. Only creates "exon" and "CDS" entries. Additional
-        columns are included as attributes.""",
+        description="Convert Rp-Bp ORF predictions (BED12+) into GTF. The "
+        '"thick_start" and "thick_end" fields are used to determine the CDS '
+        'GTF entries. Only creates "exon" and "CDS" entries. Additional '
+        "columns are included as attributes.",
     )
     parser.add_argument(
         "bed",
@@ -53,7 +56,7 @@ def get_parser():
         "style expected by utils.bed_utils.",
     )
     parser.add_argument(
-        "out",
+        "gtf",
         help="The (output) gtf file.",
     )
     parser.add_argument(
@@ -64,6 +67,7 @@ def get_parser():
         default=1,
     )
     logging_utils.add_logging_options(parser)
+    slurm.add_sbatch_options(parser, num_cpus=1, mem="2G")
 
     return parser
 
@@ -74,8 +78,16 @@ def main():
     args = parser.parse_args()
     logging_utils.update_logging(args)
 
-    msg = "Reading bed file"
+    msg = "[get-gtf-from-predictions]: {}".format(" ".join(sys.argv))
     logger.info(msg)
+
+    # if using slurm, submit the script
+    if args.use_slurm:
+        cmd = "{}".format(" ".join(shlex.quote(s) for s in sys.argv))
+        slurm.check_sbatch(cmd, args=args)
+        return
+
+    logger.info("Reading bed file")
     bed = bed_utils.read_bed(args.bed)
 
     # rename/wrangle attributes
@@ -140,7 +152,7 @@ def main():
 
     pandas_utils.write_df(
         gtf_entries,
-        args.out,
+        args.gtf,
         index=False,
         sep="\t",
         header=None,

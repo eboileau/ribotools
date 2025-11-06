@@ -9,14 +9,18 @@ By default, TE is estimated based on RPFs and RNA abundance for ``type=CDS`` (3r
 
     The same is true for DE, *i.e.* abundance is calculated for ``type=CDS`` by default, using gene features. But you can find regulated Ribo-seq ORFs across conditions, just follow the description below.
 
+.. _using_orfs_prep:
+
+Prepare input for abundance estimation
+--------------------------------------
 
 You first need to locate the output of ``summarize-rpbp-predictions``, in particular the BED12+ file *<project_name>[.note][-unique][.filtered].predicted-orfs.bed.gz*, see `Summarizing the Rp-Bp predictions <https://rp-bp.readthedocs.io/en/latest/howto-qc.html#summarizing-the-rp-bp-predictions>`_. This file contains the combined predicted translation events, or Ribo-seq ORFs, from all samples and replicates, with additional columns. To prepare a GTF file with the Ribo-seq ORFs
 
 .. code-block:: bash
 
-    get-gtf-from-predictions bed out [options]
+    get-gtf-from-predictions [options] bed gtf
 
-where ``bed`` is the path to the BED12+ Ribo-seq ORFs, as described above, and ``out`` is the path to the GTF file to be created, *e.g.* *<project_name>[.note][-unique][.filtered].predicted-orfs.gtf*. This file contain all the Ribo-seq ORFs, with CDS and exon features, and additional attributes, such as ORF type. For all options, consult the API for :ref:`api_gtf`.
+where ``bed`` is the path to the BED12+ Ribo-seq ORFs, as described above, and ``gtf`` is the path to the GTF file to be created, *e.g.* *<project_name>[.note][-unique][.filtered].predicted-orfs.gtf*. This file contain all the Ribo-seq ORFs, with CDS and exon features, and additional attributes, such as ORF type. For all options, consult the API for :ref:`api_gtf`.
 
 You are now ready to call
 
@@ -28,6 +32,11 @@ The important options are
 
 * ``--htseq-options "--idattr orf_id"``, this will indicate ``htseq-count`` to use the ORF id as feature for counting. You can add additional options, such as ``"--additional-attr orf_type"``, *etc.*
 * ``--gtf HTSEQ_GTF``, where ``HTSEQ_GTF`` is the newly created GTF file *<project_name>[.note][-unique][.filtered].predicted-orfs.gtf*, this will indicate the program to use the Ribo-seq ORFs for abundance estimation, and not the existing GTF file.
+
+.. _using_orfs_tede:
+
+Estimate TE or DE using Ribo-seq ORFs
+-------------------------------------
 
 Finally, you need to check the ``htseq-count`` output tables, to determine which column contains which attributes. Currently, ``htseq-count`` outputs ``"--additional-attr`` in the order as they are given, but this behaviour is not guaranteed. In particular if using multiple additional attributes, you need to make sure the right column is used, and they can be specified with ``-orfCol COLUMN_NUMBER`` and ``-symbolCol COLUMN``, where ``orfCol`` is the ORF type column, if used, and ``symbolCol`` is the ``gene_name`` column. As given above, this would be ``--orfCol 2 --symbolCol 3``.
 

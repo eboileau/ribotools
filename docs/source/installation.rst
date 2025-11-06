@@ -53,14 +53,19 @@ To install the local VCS project in development mode
 .. code-block:: bash
 
     # create a conda environment...
-    mamba create -n ribotools
+    mamba create -n ribotools_dev
     # ...activate it...
-    mamba activate ribotools
-    # ... and install dependencies
-    git https://github.com/eboileau/ribotools.git && cd ribotools
-    mamba env update -n ribotools --file environment.yml
-    # install
-    pip --verbose install --editable .[tests,docs] 2>&1 | tee install.log
+    mamba activate ribotools_dev
+    # ... and only install dependencies (ribotools_dev is now activated)
+    mamba install --only-deps ribotools
+    # clone the git repository
+    git clone https://github.com/eboileau/ribotools.git && cd ribotools
+    # or clone the repository first (optionally update the name in environment.yml) and
+    # mamba env create -f environment.yml or if the environment already exists
+    # mamba env update -n ribotools --file environment.yml
+    pip install --no-deps --editable . 2>&1 | tee install.log
+    # install tests (optionally install docs dependencies)
+    pip install pytest pytest-cov pytest-depends
 
 
 PyPI installation
@@ -95,15 +100,14 @@ Remove the conda environment
 
 .. code-block:: bash
 
-    conda env remove --name ribotools
+    mamba env remove --name ribotools
 
 or remove the package installed in another environment
 
 .. code-block:: bash
 
     # remove the ribotools package from myenv environment...
-    conda remove -n myenv ribotools
-
+    mamba remove -n myenv ribotools
 
 To remove **Ribotools** if installed with pip
 

@@ -21,42 +21,43 @@ For example
 
 .. code-block:: yaml
 
-    riboseq_samples:
-     ribo-untr-1: /path/to/your/ribotools-example/input/ribo-untr-1.fastq.gz
-     ribo-untr-2: /path/to/your/ribotools-example/input/ribo-untr-2.fastq.gz
-     ribo-iso-1: /path/to/your/ribotools-example/input/ribo-iso-1.fastq.gz
-     ribo-iso-2: /path/to/your/ribotools-example/input/ribo-iso-2.fastq.gz
+   riboseq_samples:
+    d01-1: /path/to/hiPSC-CM.ribo.test-chr1.rep-d01-1.fastq.gz
+    d01-2: /path/to/hiPSC-CM.ribo.test-chr1.rep-d01-2.fastq.gz
+    d05-1: /path/to/hiPSC-CM.ribo.test-chr1.rep-d05-1.fastq.gz
+    d05-2: /path/to/hiPSC-CM.ribo.test-chr1.rep-d05-2.fastq.gz
 
-    riboseq_sample_name_map:
-     ribo-untr-1: Ribo-Untr-1
-     ribo-untr-2: Ribo-Untr-2
-     ribo-iso-1: Ribo-Iso-1
-     ribo-iso-2: Ribo-Iso-2
+   riboseq_sample_name_map:
+    d01-1: Ribo-d1-1
+    d01-2: Ribo-d1-2
+    d05-1: Ribo-d5-1
+    d05-2: Ribo-d5-2
 
-    rnaseq_samples:
-     rna-untr-1: /path/to/your/ribotools-example/input/rna-untr-1.fastq.gz
-     rna-untr-2: /path/to/your/ribotools-example/input/rna-untr-2.fastq.gz
-     rna-iso-1: /path/to/your/ribotools-example/input/rna-iso-1.fastq.gz
-     rna-iso-2: /path/to/your/ribotools-example/input/rna-iso-2.fastq.gz
+   rnaseq_samples:
+    d01-1: /path/to/hiPSC-CM.rna.test-chr1.rep-d01-1.fastq.gz
+    d01-2: /path/to/hiPSC-CM.rna.test-chr1.rep-d01-2.fastq.gz
+    d05-1: /path/to/hiPSC-CM.rna.test-chr1.rep-d05-1.fastq.gz
+    d05-2: /path/to/hiPSC-CM.rna.test-chr1.rep-d05-2.fastq.gz
 
-    rnaseq_sample_name_map:
-     rna-untr-1: RNA-Untr-1
-     rna-untr-2: RNA-Untr-2
-     rna-iso-1: RNA-Iso-1
-     rna-iso-2: RNA-Iso-2
+   rnaseq_sample_name_map:
+    d01-1: RNA-d1-1
+    d01-2: RNA-d1-2
+    d05-1: RNA-d5-1
+    d05-2: RNA-d5-2
 
-    matching_samples:
-     ribo-untr-1: rna-untr-1
-     ribo-untr-2: rna-untr-2
-     ribo-iso-1: rna-iso-1
-     ribo-iso-2: rna-iso-2
+   matching_samples:
+    d01-1: d01-1
+    d01-2: d01-2
+    d05-1: d05-1
+    d05-2: d05-2
 
-    tea_data: /path/to/your/ribotools-example/tea-results
+   tea_data: /path/to/tea-results
 
-    contrasts:
-     Iso_vs_Untr:
-      - Iso
-      - Untr
+   # second is always reference level - here "d1"
+   contrasts:
+    d5_vs_d1:
+     - d5
+     - d1
 
 
 HTSeq workflow
@@ -73,14 +74,15 @@ This will create a file named *sample-table<-project_name>.csv*, where ``project
 .. csv-table:: sample-table
    :header: sampleName,fileName,assay,condition
 
-    Ribo-Untd-1,/path/to/count-tables/Ribo-Untd-1.de-novo-unique.length-24-26-27-28-29.tsv,ribo,Untd
-    Ribo-Untd-2,/path/to/count-tables/Ribo-Untd-2.de-novo-unique.length-25-26-27-28-29.tsv,ribo,Untd
-    Ribo-Iso-1,/path/to/count-tables/Ribo-Iso-1.de-novo-unique.length-25-26-27-28-29.tsv,ribo,Iso
-    Ribo-Iso-2,/path/to/count-tables/Ribo-Iso-2.de-novo-unique.length-25-26-27-28-29-31.tsv,ribo,Iso
-    RNA-Untd-1,/path/to/count-tables/RNA-Untd-1.de-novo-unique.length-29.tsv,rna,Untd
-    RNA-Untd-2,/path/to/count-tables/RNA-Untd-2.de-novo-unique.length-29.tsv,rna,Untd
-    RNA-Iso-1,/path/to/count-tables/RNA-Iso-1.de-novo-unique.length-29.tsv,rna,Iso
-    RNA-Iso-2,/path/to/count-tables/RNA-Iso-2.de-novo-unique.length-31.tsv,rna,Iso
+   Ribo-d1-1,/path/to/riboseq-results/count-tables/Ribo-d1-1-unique.length-29-30-31.tsv,ribo,d1
+   Ribo-d1-2,/path/to/riboseq-results/count-tables/Ribo-d1-2-unique.length-29-30.tsv,ribo,d1
+   Ribo-d5-1,/path/to/riboseq-results/count-tables/Ribo-d5-1-unique.length-29-30-31.tsv,ribo,d5
+   Ribo-d5-2,/path/to/riboseq-results/count-tables/Ribo-d5-2-unique.length-29-30-31.tsv,ribo,d5
+   RNA-d1-1,/path/to/rnaseq-results/count-tables/RNA-d1-1-unique.length-31.tsv,rna,d1
+   RNA-d1-2,/path/to/rnaseq-results/count-tables/RNA-d1-2-unique.length-30.tsv,rna,d1
+   RNA-d5-1,/path/to/rnaseq-results/count-tables/RNA-d5-1-unique.length-31.tsv,rna,d5
+   RNA-d5-2,/path/to/rnaseq-results/count-tables/RNA-d5-2-unique.length-31.tsv,rna,d5
+
 
 .. important::
 
@@ -97,6 +99,8 @@ This will create a file named *sample-table<-project_name>.csv*, where ``project
    If you have batches, you should add a columm to this file, and the header must be named *batch*. The assay column must contain
    two levels: *ribo* and *rna*. In all cases, before proceeding further, always proof-read this file!
 
+
+.. _prep_tables_te_general:
 
 General workflow
 ^^^^^^^^^^^^^^^^
@@ -119,8 +123,12 @@ General usage
 
     run-tea [options] config
 
-For all options, consult the API for :ref:`api_te`. See also :ref:`howto_config`. To estimate TE for Ribo-seq ORFs instead of genes, use ``--symbolCol``, ``--orfCol``, and/or  ``--delim``, see :ref:`using_riboseq_orfs` for details.
+For all options, consult the API for :ref:`api_te`. See also :ref:`howto_config`. To estimate TE for Ribo-seq ORFs instead of genes, use ``--symbolCol``, ``--orfCol``, and/or  ``--delim``, see :ref:`using_orfs_tede` for details.
 
+.. note::
+
+   The count tables can be TAB- or CSV-formatted. The default ``--delim`` option is TAB. Anything else will fall back to white space (one or
+   more spaces, tabs, newlines or carriage returns). The sample table must be CSV-formatted.
 
 .. tip::
 

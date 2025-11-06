@@ -5,7 +5,7 @@ User guide
 
 You want to generate count tables from matched Ribo- and RNA-seq data? First, you need to prepare genome indices and annotations for your organism. This has to be done once for any given reference genome and annotation. Consult :ref:`howto_annotation`.
 
-You can estimate translation efficiency, you can find regulated Ribo-seq ORFs across conditions, without matched RNA-seq data, and much more. Consult :ref:`running_htseq_workflow`, :ref:`running_te` or :ref:`running_de`.
+You can estimate translation efficiency, you can find regulated Ribo-seq ORFs across conditions, with or without matched RNA-seq data, and much more. Consult :ref:`running_htseq_workflow`, :ref:`running_te` or :ref:`running_de`.
 
 .. hint::
 

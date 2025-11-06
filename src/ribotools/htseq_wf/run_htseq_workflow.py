@@ -51,62 +51,61 @@ logger = logging.getLogger(__name__)
 def get_parser():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="""Submit samples for abundance estimation.
-        The pipeline is called for every sample in the configuration file.""",
+        description="Submit samples for abundance estimation. "
+        "The pipeline is called for every sample in the configuration file.",
     )
     parser.add_argument("seq", choices=["rna", "ribo"])
     parser.add_argument("config", help="The yaml configuration file.")
     parser.add_argument(
         "--skip-periodicity-estimation",
-        help="""Do not estimate periodicity and do not filter
-        non-periodic read lengths from the final alignment files.
-        For Ribo-seq only.""",
+        help="Skip periodicity estimation and do not filter out "
+        "non-periodic read lengths from the final alignment files. "
+        "For Ribo-seq only.",
         action="store_true",
     )
     parser.add_argument(
         "--run-all",
-        help="""Run Ribo-seq and RNA-seq, one after the other. RNA-seq
-        is run only if ALL Ribo-seq jobs complete successfully.
-        For Ribo-seq only.""",
+        help="Run Ribo-seq and RNA-seq, one after the other. RNA-seq "
+        "is run only if ALL Ribo-seq jobs complete successfully. "
+        "For Ribo-seq only.",
         action="store_true",
         required="--rna-stranded" in sys.argv,
     )
     parser.add_argument(
         "--rna-stranded",
-        help="""Library strandedness for RNA-seq, when [--run-all].
-        This option is passed to 'htseq-count' and overrides the same
-        option passed via [--htseq-options] or the default value.""",
+        help="Library strandedness for RNA-seq, when [--run-all]. "
+        "This option is passed to 'htseq-count' and overrides the same "
+        "option passed via [--htseq-options] or the default value.",
         choices=["yes", "reverse", "no"],
         default="no",
     )
     parser.add_argument(
         "--trim-rna-to-max-fragment-size",
-        help="""Trim RNA post adapter removal using max fragment size
-        from matching Ribo-seq samples. Required: the "periodic-offsets"
-        files, the "matching_samples" key in the config, and the option
-        [--ribo-config]. If the [--post-trim-length] option is passed
-        via [--flexbar-options], it will override this option.
-        For RNA-seq only.""",
+        help="Trim RNA post adapter removal using max fragment size "
+        'from matching Ribo-seq samples. Required: the "periodic-offsets" '
+        'files, the "matching_samples" key in the config, and the option '
+        "[--ribo-config]. If the [--post-trim-length] option is passed "
+        "via [--flexbar-options], it will override this option. "
+        "For RNA-seq only.",
         action="store_true",
     )
     parser.add_argument(
         "--ribo-config",
-        help="""The Ribo-seq config file
-        if using [--trim-rna-to-max-fragment-size].""",
+        help="The Ribo-seq config file if using [--trim-rna-to-max-fragment-size].",
         required="--trim-rna-to-max-fragment-size" in sys.argv,
         type=str,
     )
     parser.add_argument(
         "--rna-config",
-        help="""The RNA-seq config file if using [--run-all].""",
+        help="The RNA-seq config file if using [--run-all].",
         required="--run-all" in sys.argv,
         type=str,
     )
     parser.add_argument(
         "--gtf",
-        help="""A different GTF file for abundance estimation, e.g. the output
-        of 'get-gtf-from-predictions' (Ribo-seq ORFs). This is passed to
-        'htseq-count' and overrides the GTF file from the config.""",
+        help="A different GTF file for abundance estimation, e.g. the output "
+        " of 'get-gtf-from-predictions' (Ribo-seq ORFs). This is passed to "
+        " 'htseq-count' and overrides the GTF file from the config.",
         type=str,
         dest="htseq_gtf",
     )

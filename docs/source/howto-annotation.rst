@@ -16,7 +16,7 @@ To prepare the Bowtie2 index
 
 .. code-block:: bash
 
-   bowtie2-build-s [options] <ribosomal_fasta> <ribosomal_index>
+   bowtie2-build-s [options] ribosomal_fasta ribosomal_index
 
 where ``ribosomal_fasta`` and ``ribosomal_index`` must match the values from the configuration file.
 
@@ -24,11 +24,17 @@ To prepare the STAR index
 
 .. code-block:: bash
 
-   STAR --runMode genomeGenerate [options] --genomeDir <star_index> --genomeFastaFiles <fasta>
+   STAR --runMode genomeGenerate [options] --genomeDir star_index --genomeFastaFiles fasta
 
 where ``fasta`` and ``star_index`` must match the values from the configuration file. See :ref:`howto_config`.
 
-For periodicity estimation (recommended), a BED12+ file with annotated transcripts is also required.
+For periodicity estimation (default), a BED12+ file with annotated transcripts is also required. You can create this file with
+
+.. code-block:: bash
+
+   gtf-to-bed12 [options] gtf bed
+
+where ``gtf`` is the reference GTF annotation (must match the value from the configuration file), and ``bed`` is the BED12+ file to generate. To use this file it must be placed under the directory specified by ``genome_base_path`` and its name must match the pattern *<genome_name>.annotated.bed.gz*.
 
 .. tip::
 

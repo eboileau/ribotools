@@ -6,5 +6,6 @@ API
 
    api-workflow
    api-gtf
+   api-sample
    api-te
    api-de

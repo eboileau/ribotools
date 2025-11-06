@@ -27,23 +27,24 @@ For example
 .. code-block:: yaml
 
     riboseq_samples:
-     ribo-untr-1: /path/to/your/ribotools-example/input/ribo-untr-1.fastq.gz
-     ribo-untr-2: /path/to/your/ribotools-example/input/ribo-untr-2.fastq.gz
-     ribo-iso-1: /path/to/your/ribotools-example/input/ribo-iso-1.fastq.gz
-     ribo-iso-2: /path/to/your/ribotools-example/input/ribo-iso-2.fastq.gz
+     d01-1: /path/to/hiPSC-CM.ribo.test-chr1.rep-d01-1.fastq.gz
+     d01-2: /path/to/hiPSC-CM.ribo.test-chr1.rep-d01-2.fastq.gz
+     d05-1: /path/to/hiPSC-CM.ribo.test-chr1.rep-d05-1.fastq.gz
+     d05-2: /path/to/hiPSC-CM.ribo.test-chr1.rep-d05-2.fastq.gz
 
     riboseq_sample_name_map:
-     ribo-untr-1: Ribo-Untr-1
-     ribo-untr-2: Ribo-Untr-2
-     ribo-iso-1: Ribo-Iso-1
-     ribo-iso-2: Ribo-Iso-2
+     d01-1: Ribo-d1-1
+     d01-2: Ribo-d1-2
+     d05-1: Ribo-d5-1
+     d05-2: Ribo-d5-2
 
-    dea_data: /path/to/your/ribotools-example/dea-results
+    dea_data: /path/to/dea-results
 
+    # second is always reference level - here "d1"
     contrasts:
-     Iso_vs_Untr:
-      - Iso
-      - Untr
+     d5_vs_d1:
+      - d5
+      - d1
 
 HTSeq workflow
 ^^^^^^^^^^^^^^
@@ -60,10 +61,10 @@ This will create a file named *sample-table<-project_name>.csv*, where ``project
 .. csv-table:: sample-table
    :header: sampleName,fileName,assay,condition
 
-    Ribo-Untd-1,/path/to/count-tables/Ribo-Untd-1.de-novo-unique.length-24-26-27-28-29.tsv,ribo,Untd
-    Ribo-Untd-2,/path/to/count-tables/Ribo-Untd-2.de-novo-unique.length-25-26-27-28-29.tsv,ribo,Untd
-    Ribo-Iso-1,/path/to/count-tables/Ribo-Iso-1.de-novo-unique.length-25-26-27-28-29.tsv,ribo,Iso
-    Ribo-Iso-2,/path/to/count-tables/Ribo-Iso-2.de-novo-unique.length-25-26-27-28-29-31.tsv,ribo,Iso
+    Ribo-d1-1,/path/to/riboseq-results/count-tables/Ribo-d1-1-unique.length-29-30-31.tsv,ribo,d1
+    Ribo-d1-2,/path/to/riboseq-results/count-tables/Ribo-d1-2-unique.length-29-30.tsv,ribo,d1
+    Ribo-d5-1,/path/to/riboseq-results/count-tables/Ribo-d5-1-unique.length-29-30-31.tsv,ribo,d5
+    Ribo-d5-2,/path/to/riboseq-results/count-tables/Ribo-d5-2-unique.length-29-30-31.tsv,ribo,d5
 
 
 .. important::
@@ -80,6 +81,7 @@ This will create a file named *sample-table<-project_name>.csv*, where ``project
    If you have batches, you should add a columm to this file, and the header must be named *batch*. The assay column can be ignored, but
    if present, it must contain only one value *e.g.* ribo. In all cases, before proceeding further, always proof-read this file!
 
+.. _prep_tables_de_general:
 
 General workflow
 ^^^^^^^^^^^^^^^^
@@ -103,7 +105,12 @@ General usage
 
     run-dea [options] config
 
-For all options, consult the API for :ref:`api_de`. See also :ref:`howto_config`. To estimate DE for Ribo-seq ORFs instead of genes, use ``--symbolCol``, ``--orfCol``, and/or  ``--delim``, see :ref:`using_riboseq_orfs` for details.
+For all options, consult the API for :ref:`api_de`. See also :ref:`howto_config`. To estimate DE for Ribo-seq ORFs instead of genes, use ``--symbolCol``, ``--orfCol``, and/or  ``--delim``, see :ref:`using_orfs_tede` for details.
+
+.. note::
+
+   The count tables can be TAB- or CSV-formatted. The default ``--delim`` option is TAB. Anything else will fall back to white space (one or
+   more spaces, tabs, newlines or carriage returns). The sample table must be CSV-formatted.
 
 .. tip::
 

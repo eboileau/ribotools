@@ -3,11 +3,17 @@
 How to add a config file
 ========================
 
-Create separate YAML configuration files, or a single YAML configuration file, for Ribo- and RNA-seq. For Ribo-seq, consult `How to add a config file <https://rp-bp.readthedocs.io/en/latest/howto-config.html>`_. For RNA-seq, additional keys are required:
+Create separate YAML configuration files, or a single YAML configuration file, for Ribo- and RNA-seq. For Ribo-seq, consult `How to add a config file <https://rp-bp.readthedocs.io/en/latest/howto-config.html>`_.
 
+.. note::
+
+   Required keys such as ``fasta`` and ``ribosomal_fasta`` are required only if you use **Rp-Bp** to create annotations, see :ref:`howto_annotation`.
+
+
+For RNA-seq, additional keys are required:
 
 * ``rnaseq_samples`` *(required, input)* A dictionary *key: value*, where *key* is used to construct filenames, and *value* is the full path to the FASTQ.gz file for a given sample. The *key* should not contain spaces or special characters.
-* ``matching_samples`` *(optional, input)* A dictionary *key: value*, where *key* is the same as ``rnaseq_samples`` *key*, and *value* is the same as ``riboseq_samples`` *key* (matched samples)
+* ``matching_samples`` *(optional, input)* A dictionary *key: value*, where *key* is the same as ``rnaseq_samples`` *key*, and *value* is the same as ``riboseq_samples`` *key* (matched samples). Required when using ``--trim-rna-to-max-fragment-size``.
 * ``rna_adapter_file`` *(optional, input)* Path to adapter sequences to be removed (FASTA).
 * ``rnaseq_data`` *(required, output)* The base output location for all created files.
 * ``rnaseq_sample_name_map`` *(optional, output)* A dictionary *key: value*, where *key* is the same as ``rnaseq_samples`` *key*, and *value* is a fancy name for *key* to use in downstream analyses.

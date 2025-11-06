@@ -8,7 +8,7 @@ See :ref:`ribotools_usage` for a short description of required input and expecte
 
 .. attention::
 
-    All Ribo-seq samples (including biological replicates) in the configuration file must be from the same organism and use the same ``genome_base_path``, ``star_index``, ``ribosomal_index``, *etc.* Samples from different organisms or using different annotations must be "split" into different configuration files, and run separately.
+    All Ribo- and/or RNA-seq samples in the configuration file must be from the same organism and use the same ``genome_base_path``, ``star_index``, ``ribosomal_index``, *etc.* Samples from different organisms or using different annotations must be "split" into different configuration files, and run separately.
 
 
 .. note::
@@ -51,12 +51,11 @@ For all options, consult the API for :ref:`api_workflow`. Even if you use the sa
 
 .. hint::
 
-   To estimate abundance for Ribo-seq ORFs instead of genes (CDS by default, or exon), you need to prepare a GTF file with Ribo-seq ORFs before, and then ``run-htseq-workflow`` with additional options, see :ref:`using_riboseq_orfs`.
+   To estimate abundance for Ribo-seq ORFs instead of genes, you need to prepare a GTF file with Ribo-seq ORFs before, and then ``run-htseq-workflow`` with additional options, see :ref:`using_riboseq_orfs`.
 
 .. tip::
 
-    To perform Ribo-seq read filtering quality control (QC), use the ``-k/--keep-intermediate-files`` option, and the
-    **Rp-Bp** profile construction dashboard, see `Visualization and QC <https://rp-bp.readthedocs.io/en/latest/howto-qc.html>`_.
+   You can run **Rp-Bp** before **Ribotools**, then run the abundance estimation pipeline without the ``--overwrite`` flag. The pipeline will skip existing files and continue. Use the ``-k/--keep-intermediate-files`` flag. This will allow you to perform Ribo-seq read filtering quality control (QC), see `Visualization and QC <https://rp-bp.readthedocs.io/en/latest/howto-qc.html>`_.
 
 .. tip::
 

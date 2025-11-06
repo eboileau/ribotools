@@ -4,7 +4,7 @@ Getting started
 What is **Ribotools**?
 ----------------------
 
-**Ribotools** is a toolbox for the analysis of matched ribosome profiling (Ribo-seq) and RNA sequencing (RNA-seq) data. It can be used to generate count tables for Ribo-seq, RNA-seq, or both, and perform translation efficiency (TE) analysis.
+**Ribotools** is a toolbox for the analysis of matched ribosome profiling (Ribo-seq) and RNA sequencing (RNA-seq) data. It can be used to generate count tables for Ribo-seq, RNA-seq, or both, and perform translation efficiency (TE) or differential expression (DE) analyses.
 
 Ribo-seq abundance is estimated from ribosome footprints, or ribosome-protected RNA fragments (RPFs), using periodic reads only. Optionally, RNA-seq reads can be trimmed to the maximum periodic fragment length of a matched Ribo-seq sample, to minimize mapping bias.
 
@@ -14,7 +14,7 @@ To get started, you need
 * matched RNA-seq data (FASTQ) - if performing TE analysis
 
 * annotation for your organism (GTF)
-* indices for `Bowtie 2 <http://bowtie-bio.sourceforge.net/bowtie2/index.shtml>`_  and `STAR <https://github.com/alexdobin/STAR>`_
+* indices for `Bowtie 2 <http://bowtie-bio.sourceforge.net/bowtie2/index.shtml>`_  and `STAR <https://github.com/alexdobin/STAR>`_ - you can also generate these with **Ribotools**
 * protocol-specific or general adapter sequences to be removed (FASTA)
 
 
@@ -27,7 +27,7 @@ Install with
 
 .. code-block:: bash
 
-   mamba create --name ribotools ribotools
+   conda create -n ribotools ribotools
 
 or use a container
 
@@ -40,7 +40,7 @@ or use a container
 
 There is no *latest* tag, you need to specify the version tag. See `ribotools/tags <https://quay.io/repository/biocontainers/ribotools?tab=tags>`_ for valid values for ``<tag>``.
 
-For detailed installation instructions, refer to `Installation <installation.html>`_.
+For detailed installation instructions, refer to :ref:`installation_full`.
 
 
 **Ribotools** quickstart
@@ -52,22 +52,27 @@ To generate count tables, simply call
 
 .. code-block:: bash
 
-    run-htseq-workflow <{rna,ribo}> <config> [options]
+    run-htseq-workflow [options] {rna,ribo} config
+
+Prepare the sample information table with
+
+.. code-block:: bash
+
+   get-sample-table config
 
 To perform TE analysis, call
 
 .. code-block:: bash
 
-    run-tea <-config CONFIG> [options]
+    run-tea [options] config
 
 To perform DE analysis, call
 
 .. code-block:: bash
 
-    run-dea <-config CONFIG> [options]
+    run-dea [options] config
 
-For more information and guidelines on how to prepare the configuration file, refer to the `User guide <user-guide.html>`_.
-
+For more information and guidelines on how to prepare the configuration file, refer to the :ref:`user_guide`.
 
 How to report issues
 --------------------
@@ -100,4 +105,4 @@ We try to follow `semantic versioning <https://semver.org/>`_.
 License
 -------
 
-The MIT License (MIT). Copyright (c) 2019 Etienne Boileau.
+The MIT License (MIT). Copyright (c) 2025 Etienne Boileau.
