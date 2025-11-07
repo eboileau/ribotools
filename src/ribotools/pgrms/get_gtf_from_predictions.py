@@ -59,13 +59,6 @@ def get_parser():
         "gtf",
         help="The (output) gtf file.",
     )
-    parser.add_argument(
-        "-p",
-        "--num-cpus",
-        help="The number of CPUs to use",
-        type=int,
-        default=1,
-    )
     logging_utils.add_logging_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=1, mem="2G")
 
