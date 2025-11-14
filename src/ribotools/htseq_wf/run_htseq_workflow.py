@@ -60,7 +60,14 @@ def get_parser():
         "--skip-periodicity-estimation",
         help="Skip periodicity estimation and do not filter out "
         "non-periodic read lengths from the final alignment files. "
-        "For Ribo-seq only.",
+        "For Ribo-seq only (Default is to keep periodic reads only).",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--create-orf-profiles",
+        help="Create ORF profiles for extended QC. Silently ignored "
+        "if used with [--skip-periodicity-estimation]. Requires "
+        "Rp-Bp index files.",
         action="store_true",
     )
     parser.add_argument(
@@ -227,13 +234,15 @@ def main():
         if not args.skip_periodicity_estimation:
 
             not_periodic_str = ""
+            profile_str = "--create-orf-profiles" if args.create_orf_profiles else ""
             filter_non_periodic_str = "--filter-non-periodic"
 
             for sample_name in config["riboseq_samples"].keys():
 
-                cmd = "get-ribo-periodic {} {} {} {} {} {} {}".format(
+                cmd = "get-ribo-periodic {} {} {} {} {} {} {} {}".format(
                     args.config,
                     sample_name,
+                    profile_str,
                     filter_non_periodic_str,
                     do_not_call_str,
                     logging_str,
