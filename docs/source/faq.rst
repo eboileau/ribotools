@@ -32,7 +32,7 @@ Yes, check :ref:`prep_tables_te_general` (TE) or :ref:`prep_tables_de_general` (
 Can I quality control (QC) my data?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 For Ribo-seq, **Ribotools** estimates periodicity by default, so you know which samples and read lengths are usable for downstream analyses.
-You can use the `Rp-Bp profile construction dashboard <https://rp-bp.readthedocs.io/en/latest/howto-qc.html#summarizing-the-profile-construction>`_ to facilitate visualization and QC of your Ribo-seq data. For RNA-seq, there are already plenty of QC tools.
+If you use **Rp-Bp** to create index files and run the pipeline with the ``--create-orf-profiles`` option, you can use the `Rp-Bp profile construction dashboard <https://rp-bp.readthedocs.io/en/latest/howto-qc.html#summarizing-the-profile-construction>`_ to facilitate visualization and QC of your Ribo-seq data. See :ref:`ribotools_qc` for more details. For RNA-seq, there are already plenty of QC tools.
 
 .. _q5:
 

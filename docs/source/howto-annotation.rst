@@ -34,10 +34,10 @@ For periodicity estimation (default), a BED12+ file with annotated transcripts i
 
    gtf-to-bed12 [options] gtf bed
 
-where ``gtf`` is the reference GTF annotation (must match the value from the configuration file), and ``bed`` is the BED12+ file to generate. To use this file it must be placed under the directory specified by ``genome_base_path`` and its name must match the pattern *<genome_name>.annotated.bed.gz*.
+where ``gtf`` is the reference GTF annotation (must match the value from the configuration file), and ``bed`` is the BED12+ file to generate. To use this file, it must be placed under the directory specified by ``genome_base_path`` and its name must match the pattern *<genome_name>.annotated.bed.gz*.
 
 .. tip::
 
     Use **Rp-Bp** to prepare all annotations and indices at once. Use the same configuration file with the necessary keys to
     run ``prepare-rpbp-genome``. See `How to prepare annotations <https://rp-bp.readthedocs.io/en/latest/howto-annotation.html>`_ for
-    more information.
+    more information. This is a must if you want to QC your Ribo-seq data, see :ref:`ribotools_qc`.

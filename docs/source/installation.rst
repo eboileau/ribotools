@@ -53,43 +53,45 @@ To install the local VCS project in development mode
 .. code-block:: bash
 
     # create a conda environment...
-    mamba create -n ribotools_dev
-    # ...activate it...
-    mamba activate ribotools_dev
-    # ... and only install dependencies (ribotools_dev is now activated)
+    mamba create -n ribotools
+    # ... activate...
+    mamba activate ribotools
+    # ... and install dependencies...
     mamba install --only-deps ribotools
-    # clone the git repository
+    # ... clone the git repository and install the package
     git clone https://github.com/eboileau/ribotools.git && cd ribotools
-    # or clone the repository first (optionally update the name in environment.yml) and
-    # mamba env create -f environment.yml or if the environment already exists
-    # mamba env update -n ribotools --file environment.yml
     pip install --no-deps --editable . 2>&1 | tee install.log
-    # install tests (optionally install docs dependencies)
-    pip install pytest pytest-cov pytest-depends
 
+Alternatively, clone the git repository and install from the `yaml spec file <https://mamba.readthedocs.io/en/latest/user_guide/mamba.html#conda-yaml-spec-files>`_
+
+.. code-block:: bash
+
+   mamba create -f environment.yml
+   # ... activate environment...
+   mamba activate ribotools
+   pip install --no-deps --editable . 2>&1 | tee install.log
+
+Finally, install test dependencies.
 
 PyPI installation
 ^^^^^^^^^^^^^^^^^
 
-We do not recommend to install **Ribotools** directly from `PyPI <https://pypi.org/project/ribotools>`_.
-However, if you already have the required dependencies installed on your system, to install
+To install the package from `PyPI <https://pypi.org/project/ribotools>`_
 
 .. code-block:: bash
 
     # create a virtual environment...
-    python3 -m venv ribotools_pypi
-    # ... activate it ...
-    source ribotools_pypi/bin/activate
-    # ... and install Ribotools (ribotools_pypi is now activated)
+    python3 -m venv ribotools
+    # ... activate...
+    source ribotools/bin/activate
+    # ... and install the package
     pip install ribotools
 
-
-**Required dependencies:** `Flexbar <https://github.com/seqan/flexbar>`_, `Bowtie 2 <http://bowtie-bio.sourceforge.net/bowtie2/index.shtml>`_, `STAR <https://github.com/alexdobin/STAR>`_, `Samtools <http://www.htslib.org>`_.
+**Required dependencies:** `Flexbar <https://github.com/seqan/flexbar>`_, `Bowtie 2 <http://bowtie-bio.sourceforge.net/bowtie2/index.shtml>`_, `STAR <https://github.com/alexdobin/STAR>`_, `Samtools <http://www.htslib.org>`_, and `FastQC <https://www.bioinformatics.babraham.ac.uk/projects/fastqc/>`_. You also need a working `R <https://www.r-project.org/>`_ installation with additional packages.
 
 .. warning::
 
-    Conda installation or containers include all dependencies. With a PyPI installation, you need to install required dependencies. Executables or binaries must be in your ``$PATH``.
-
+    A PyPI installation only installs the python package. You need to install required dependencies separately. Executables or binaries must be in your ``$PATH``.
 
 .. _uninstall:
 
@@ -115,4 +117,4 @@ To remove **Ribotools** if installed with pip
 
     pip uninstall ribotools
 
-If the package is installed in a dedicated python virtual environment, this environment can also be removed.
+If the package is installed in a dedicated python virtual environment, remove this environment.

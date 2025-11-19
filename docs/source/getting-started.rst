@@ -27,6 +27,8 @@ Install with
 
 .. code-block:: bash
 
+   # set up the conda channels if required
+   # create a conda environment called ribotools and install ribotools
    conda create -n ribotools ribotools
 
 or use a container
@@ -72,7 +74,8 @@ To perform DE analysis, call
 
     run-dea [options] config
 
-For more information and guidelines on how to prepare the configuration file, refer to the :ref:`user_guide`.
+For more information and guidelines how to prepare the configuration file and run the pipeline, refer to the :ref:`user_guide`.
+To get started, the package includes a small example dataset. Check the :ref:`all_tutorials`.
 
 How to report issues
 --------------------
