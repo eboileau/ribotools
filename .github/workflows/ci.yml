@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+
+jobs:
+  install-and-test:
+    runs-on: ${{matrix.os}}
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Create ribotools conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          channels: conda-forge,bioconda,defaults
+          channel-priority: strict
+          auto-update-conda: true
+          auto-activate-base: false
+          activate-environment: ribotools
+          environment-file: environment.yml
+      - name: Display conda env info
+        run: |
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
+          printenv | sort
+      - name: Install test requirements
+        run: pip install pytest pytest-cov pytest-depends
+      - name: Install ribotools with --no-deps option
+        run: pip install . --no-deps --verbose
+      - name: Run tests
+        run: python -m pytest . --cov=rpbp --cov-report=xml -s -v
