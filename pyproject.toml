@@ -1,39 +1,38 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ribotools"
-description = "Ribo-seq analysis tools associated with the Rp-Bp package and more"
+description = "Ribotools: a toolbox for translation efficiency (TE) and differential expression (DE) analyses"
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Etienne Boileau" }]
 maintainers = [
   { name = "Etienne Boileau", email = "boileau@uni-heidelberg.de" }
 ]
 keywords = [
-  "bioinformatics",
-  "riboseq",
-  "open reading frame discovery",
-  "translation"
+  "Bioinformatics",
+  "Ribo-seq/Ribosome profiling",
+  "RNA-seq/RNA sequencing",
+  "Translation efficiency (TE)",
+  "Differential expression (DE)"
 ]
 # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering :: Bio-Informatics",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: MacOS :: MacOS X",
   "Operating System :: POSIX :: Linux",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 dynamic = ["version"]
-requires-python = ">=3.7,<3.11"
-dependencies = ["rpbp>=3.0.1", "htseq>=2.0.2"]
+requires-python = ">=3.11,<3.14"
+dependencies = ["rpbp>=4.0.0", "htseq"]
 
 [project.scripts]
 # programs
@@ -50,13 +49,6 @@ get-sample-table = "ribotools.scripts.__main__:get_sample_table"
 run-tea = "ribotools.scripts.__main__:run_tea"
 run-dea = "ribotools.scripts.__main__:run_dea"
 
-# discouraged - not portable to bioconda
-# [tool.setuptools]
-# script-files = [
-#   "scripts/get-sample-table",
-#   "scripts/run-tea",
-#   "scripts/run-dea"
-# ]
 [project.urls]
 Github = "https://github.com/eboileau/ribotools/"
 Issues = "https://github.com/eboileau/ribotools/issues"
@@ -68,8 +60,8 @@ docs = [
   "matplotlib",
   "nbsphinx",
   "pandoc",
-  "sphinx>=4.5.0",
-  "sphinx_rtd_theme>=1.0.0",
+  "sphinx",
+  "sphinx_rtd_theme",
   "furo",
   "sphinx-argparse",
   "sphinx-copybutton"

@@ -34,11 +34,11 @@ def get_rnaseq_bam_base(
 ):
 
     unique = filenames.get_unique_string(is_unique)
-    l = filenames.get_length_string(length)
+    ls = filenames.get_length_string(length)
     sl = get_stranded_library_string(stranded)
     n = filenames.get_note_string(note)
 
-    bam_base = "{}{}{}{}{}".format(name, n, unique, sl, l)
+    bam_base = "{}{}{}{}{}".format(name, n, unique, sl, ls)
 
     rnaseq_bam_path = get_rnaseq_bam_path(rnaseq_base)
     bam_base = os.path.join(rnaseq_bam_path, bam_base)

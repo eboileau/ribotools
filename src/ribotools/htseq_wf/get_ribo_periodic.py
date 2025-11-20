@@ -1,16 +1,13 @@
 #! /usr/bin/env python3
 
-"""Provide wrapper for Ribo-seq workflow.
+"""Wrapper for periodicity estimation.
 
-(1) Extract metagene profiles.
-(2) Estimate metagene profiles Bayes factors.
-(3) Select periodic fragments and offsets.
-(4) Optionally, filter non-periodic read lengths from alignment file (BAM)
+1. Extract metagene profiles.
+2. Estimate metagene profiles Bayes factors.
+3. Select periodic fragments and offsets.
+4. Optionally, filter non-periodic read lengths from alignment file (BAM)
 
-Note* This is similar to create-orf-profiles from the Rp-Bp
-      pipeline, except that it starts from the alignment BAM files,
-      and it does not create the ORF profiles, and possibly filters
-      the final alignment BAM file.
+cf. 'create-orf-profiles' (rpbp package).
 """
 
 import sys
@@ -39,24 +36,26 @@ default_models_base = filenames.get_default_models_base()
 
 
 def main():
+    """Estimate periodicity for a given sample."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="""Wrapper script for a Ribo-seq workflow
-        starting from alignment files, based on Rp-Bp. File names and directory structures
-        follow the conventions used in Rp-Bp.""",
+        description="""Estimate periodicity. File names and
+        directory structure follow the Rp-Bp nomenclature.""",
     )
-
     parser.add_argument("config", help="The yaml config file.")
-
     parser.add_argument("name", help="The name of the dataset.")
-
     parser.add_argument(
-        "--filter-non-periodic",
-        help="""Flag: if this flag is passed,
-        non-periodic read lengths will be filtered out of the final (BAM) file available.""",
+        "--create-orf-profiles",
+        help="Create ORF profiles for QC. Requires Rp-Bp index.",
         action="store_true",
     )
-
+    parser.add_argument(
+        "--filter-non-periodic",
+        help="""If this flag is passed,
+        non-periodic read lengths will be filtered out of the
+        final (BAM) file.""",
+        action="store_true",
+    )
     clu.add_file_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     logging_utils.add_logging_options(parser)
@@ -256,12 +255,7 @@ def main():
         keep_delete_files=keep_delete_files,
     )
 
-    # filter the last BAM file to retain periodic fragments only
-    if not args.filter_non_periodic:
-        return
-
-    # get the lengths but we don't use the offsets
-    lengths, _ = ribo_utils.get_periodic_lengths_and_offsets(
+    lengths, offsets = ribo_utils.get_periodic_lengths_and_offsets(
         config, args.name, is_unique=is_unique, default_params=metagene_options
     )
 
@@ -275,6 +269,57 @@ def main():
         return
 
     lengths_str = " ".join(lengths)
+    offsets_str = " ".join(offsets)
+
+    if args.create_orf_profiles:
+
+        # extract the riboseq profiles for each orf
+        unique_filename = filenames.get_riboseq_bam(
+            config["riboseq_data"], args.name, is_unique=is_unique, note=note
+        )
+
+        profiles_filename = filenames.get_riboseq_profiles(
+            config["riboseq_data"],
+            args.name,
+            length=lengths,
+            offset=offsets,
+            is_unique=is_unique,
+            note=note,
+        )
+
+        orfs_genomic = filenames.get_orfs(
+            config["genome_base_path"],
+            config["genome_name"],
+            note=config.get("orf_note"),
+        )
+
+        exons_file = filenames.get_exons(
+            config["genome_base_path"],
+            config["genome_name"],
+            note=config.get("orf_note"),
+        )
+
+        cmd = "extract-orf-profiles {} {} {} {} --lengths {} --offsets {} {} --num-cpus {} ".format(
+            riboseq_bam_filename,
+            orfs_genomic,
+            exons_file,
+            profiles_filename,
+            lengths_str,
+            offsets_str,
+            logging_str,
+            args.num_cpus,
+        )
+
+        in_files = [orfs_genomic, exons_file, unique_filename]
+        out_files = [profiles_filename]
+
+        shell_utils.call_if_not_exists(
+            cmd, out_files, in_files=in_files, overwrite=args.overwrite, call=call
+        )
+
+    # filter BAM to retain periodic fragments only
+    if not args.filter_non_periodic:
+        return
 
     bam_to_filter = riboseq_bam_filename
 

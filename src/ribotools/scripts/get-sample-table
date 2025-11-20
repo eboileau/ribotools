@@ -1,79 +1,121 @@
 #! /usr/bin/env Rscript
 
-# Usage: get-sample-table <-config CONFIG> [{-ribo,-rna}]
-# 1. <-config CONFIG> Yaml config file (same as used for run-htseq-workflow)
-# 2. [{-ribo,-rna}]   Prepare only table for Ribo-seq or RNA-seq samples - default both
+# Usage: get-sample-table [--help] [--ribo] [--rna] [--dea] config
+# config           Yaml config file (same as used for 'run-htseq-workflow')
+# [{--ribo,--rna}] Prepare table for Ribo-seq or RNA-seq samples only (default: both)
+# [--dea]          Use config key 'dea_data' (default: 'tea_data')
 
-print("Loading R libraries...")
+suppressPackageStartupMessages(library(argparser))
+suppressPackageStartupMessages(library(yaml))
+suppressPackageStartupMessages(library(dplyr))
 
-suppressMessages(library(yaml))
-suppressMessages(library(dplyr))
+# ---------------------------------------------------------
+## Functions
+
+is_empty <- function(x) {
+  if (length(x) == 0 & !is.null(x)) {
+    TRUE
+  } else {
+    FALSE
+  }
+}
+
+check_keys <- function(required, keys, func) {
+  func(sapply(required, function(key) key %in% keys))
+}
+
+get_tbl <- function(key, params, loc) {
+  if (key == "rna") {
+    keys <- c("rnaseq_data", "rnaseq_samples", "contrasts")
+    key.map <- "rnaseq_sample_name_map"
+  } else {
+    keys <- c("riboseq_data", "riboseq_samples", "contrasts")
+    key.map <- "riboseq_sample_name_map"
+  }
+  if (!check_keys(keys, names(params), all)) {
+    cat("Error: one or more keys were not found: ", paste(keys, collapse=", "), "\nExecution halted\n")
+    quit(save = "no", status = 0, runLast = FALSE)
+  }
+  if (!is.null(params[[key.map]])) {
+    table <- params[[key.map]] %>%
+      data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>%
+      dplyr::rename(sampleName = ".")
+    key.used <- key.map
+  } else {
+    table <- names(params[[keys[2]]]) %>%
+      data.frame() %>% dplyr::rename(sampleName = ".")
+    key.used <- keys[[2]]
+  }
+  dirloc <- params[[keys[1]]]
+  dirloc <- file.path(dirloc, loc, fsep=.Platform$file.sep)
+  files <- list.files(dirloc, full.names=TRUE)
+  if (!is_empty(files)) {
+    tryCatch({
+      table <- table %>% rowwise() %>%
+        mutate(fileName=files[grep(sampleName, files)])
+    }, error = function(e) {
+      cat(
+          "Warning: unable to assign 'fileName' from 'sampleName':\n",
+          "Values from ",
+          key.used,
+          " are not found in file names under ",
+          dirloc,
+          "\n"
+      )
+    })
+  }
+  table$assay <- key
+  table$condition <- NA
+  conditions <- unique(unlist(params$contrasts))
+  used <- lapply(conditions, function(c) {table$condition[grep(c, table$sampleName, fixed=TRUE)] <<- c})
+  table
+}
+
+# ---------------------------------------------------------
+## Call
 
 # defaults
 base.loc <- "count-tables"
 
-## I/O
-
 # arguments
-defaults <- list(config=NULL, ribo=FALSE, rna=FALSE)
-args <- R.utils::commandArgs(trailingOnly=TRUE, asValues=TRUE, defaults=defaults)
-if (is.null(args$config)) {
-    stop("get-sample-table <-config CONFIG> [{-ribo,-rna}]\n",
-         call.=FALSE)
-}
-if (!args$ribo & !args$rna) {
-    args$ribo <- TRUE
-    args$rna <- TRUE
+parser <- arg_parser("Create a sample table", hide.opts = TRUE)
+parser <- add_argument(parser, "config", help="Yaml config file (same as used for 'run-htseq-workflow')", type="character")
+parser <- add_argument(parser, "--ribo", help="Prepare for Ribo-seq samples only", flag=TRUE)
+parser <- add_argument(parser, "--rna", help="Prepare for RNA-seq samples only", flag=TRUE)
+parser <- add_argument(parser, "--dea", help="Use config key 'dea_data' (default: 'tea_data')", flag=TRUE)
+args <- parse_args(parser)
+
+if (!(args$ribo || args$rna)) {
+  args$ribo <- TRUE
+  args$rna <- TRUE
 }
 
 # config file
 params <- yaml::read_yaml(args$config)
-# output directory
-dirloc.out <- params$tea_data
-created <- ifelse(!dir.exists(dirloc.out), dir.create(dirloc.out, recursive=TRUE), FALSE)
-if (!created) { print(paste("Using existing directory ", dirloc.out, " ...", sep="")) }
-conditions <- unique(unlist(params$contrast))
 
-## Call
+# output directory
+key <- "tea_data"
+if (args$dea) {
+   key <- "dea_data"
+}
+if (!check_keys(key, names(params), all)) {
+  cat("Error: key not found: ", key, "\nExecution halted\n")
+  quit(save = "no", status = 0, runLast = FALSE)
+}
+dirloc.out <- params[[key]]
+created <- ifelse(!dir.exists(dirloc.out), dir.create(dirloc.out, recursive=TRUE), FALSE)
+if (!created) { cat("Info: using existing directory ", dirloc.out, " ...\n") }
 
 # rna
 if (args$rna) {
-    dirloc.rna <- params$rnaseq_data
-    dirloc.rna <- file.path(dirloc.rna, base.loc, fsep=.Platform$file.sep)
-    rna.files <- list.files(dirloc.rna, full.names=TRUE)
-
-    rna.table <- params$rnaseq_sample_name_map %>%
-        data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>%
-        dplyr::rename(sampleName = ".")
-
-    rna.table <- rna.table %>%
-        rowwise() %>% mutate(fileName=rna.files[grep(sampleName, rna.files)])
-
-    rna.table$assay <- 'rna'
-    rna.table$condition <- NA
-    used <- lapply(conditions, function(c) {rna.table$condition[grep(c, rna.table$sampleName, fixed=TRUE)] <<- c})
-
-    if (!args$ribo) { table <- rna.table }
+  rna.table <- get_tbl("rna", params, base.loc)
+  if (!args$ribo) { table <- rna.table }
 }
 
 # ribo
 if (args$ribo) {
-    dirloc.ribo <- params$riboseq_data
-    dirloc.ribo <- file.path(dirloc.ribo, base.loc, fsep=.Platform$file.sep)
-    ribo.files <- list.files(dirloc.ribo, full.names=TRUE)
-
-    ribo.table <- params$riboseq_sample_name_map %>%
-        data.frame() %>% t %>% data.frame(stringsAsFactors=FALSE) %>%
-        dplyr::rename(sampleName = ".")
-
-    ribo.table <- ribo.table %>%
-        rowwise() %>% mutate(fileName=ribo.files[grep(sampleName, ribo.files)])
-
-    ribo.table$assay <- 'ribo'
-    ribo.table$condition <- NA
-    used <- lapply(conditions, function(c) {ribo.table$condition[grep(c, ribo.table$sampleName, fixed=TRUE)] <<- c})
-
-    if (!args$rna) { table <- ribo.table }
+  ribo.table <- get_tbl("ribo", params, base.loc)
+  if (!args$rna) { table <- ribo.table }
 }
 
 if (args$ribo & args$rna) { table <- bind_rows(ribo.table, rna.table) }

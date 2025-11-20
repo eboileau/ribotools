@@ -1,29 +1,29 @@
 #! /usr/bin/env python3
 
-"""Helper script to submit a set of RNA- and/or Ribo-seq
-samples for alignment and abundance quantification (using HTSeq).
+"""Wrapper call for abundance estimation.
 
-Note* Example workflow: Submit Ribo-seq samples for
-      mapping and periodicity estimation (or else use
-      data available from the Rp-Bp pipeline). When
-      completed, submit RNA-seq samples, trimming
-      reads to max periodic fragment length of matching
-      Ribo-seq samples.
+Submit a set of Ribo- and/or RNA-seq samples for
+alignment and abundance quantification (using HTSeq).
 
-      Ribo-seq: Estimate read length periodicity,
-      and filter out non-periodic fragments from the
-      final BAM files (default). If periodicity estimates
-      and/or mapped reads were previously obtained by running
-      Rp-Bp, they must be available. Reads are NOT P-site
-      offset-shifted.
+Example workflow:
 
-      RNA-seq: Reads can be trimmed to max periodic fragment
-      length from the matching Ribo-seq data before mapping,
-      using the same default mapping options. Ribo-seq periodicity
-      estimates must be available.
+- submit Ribo-seq samples for mapping and periodicity
+estimation (or else use data available from the Rp-Bp
+pipeline). When completed, submit RNA-seq samples, trimming
+reads to max periodic fragment length of matching Ribo-seq samples.
 
-      HTSeq: Deals with library strandedness. All options are passed
-      via this script.
+- Ribo-seq: estimate read length periodicity, and filter out non-periodic
+fragments from the final BAM files (default). If periodicity estimates
+and/or mapped reads were previously obtained by running Rp-Bp,
+they must be available. Reads are NOT P-site offset-shifted.
+
+- RNA-seq: reads can be trimmed to max periodic fragment
+length from the matching Ribo-seq data before mapping,
+using the same default mapping options. Ribo-seq periodicity
+estimates must be available.
+
+- HTSeq: deals with library strandedness. All options are passed
+via this script.
 """
 
 import os
@@ -44,91 +44,91 @@ import pbiotools.utils.pgrm_utils as pgrm_utils
 import ribotools.utils.cl_utils as clu
 
 from rpbp.defaults import default_num_cpus, default_mem, star_executable
-from ribotools.defaults import htseq_options
 
 logger = logging.getLogger(__name__)
 
 
-def main():
+def get_parser():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="""Submit a set of samples to RNA- or
-        Ribo-seq alignment pipelines. The pipeline is called for every sample in the
-        configuration file.""",
+        description="Submit samples for abundance estimation. "
+        "The pipeline is called for every sample in the configuration file.",
     )
-
     parser.add_argument("seq", choices=["rna", "ribo"])
-
     parser.add_argument("config", help="The yaml configuration file.")
-
     parser.add_argument(
         "--skip-periodicity-estimation",
-        help="""Flag: by default,
-        estimate periodicity and filter non-periodic read lengths from the final alignment
-        files. For Ribo-seq only.""",
+        help="Skip periodicity estimation and do not filter out "
+        "non-periodic read lengths from the final alignment files. "
+        "For Ribo-seq only (Default is to keep periodic reads only).",
         action="store_true",
     )
-
+    parser.add_argument(
+        "--create-orf-profiles",
+        help="Create ORF profiles for extended QC. Silently ignored "
+        "if used with [--skip-periodicity-estimation]. Requires "
+        "Rp-Bp index files.",
+        action="store_true",
+    )
     parser.add_argument(
         "--run-all",
-        help="""Flag: map and count Ribo-seq and RNA-seq, one
-        after the other, provided that ALL Ribo-seq jobs completed successfully. The same
-        general options are used, including options used for Flexbar, STAR and Bowtie2.
-        For Ribo-seq only.""",
+        help="Run Ribo-seq and RNA-seq, one after the other. RNA-seq "
+        "is run only if ALL Ribo-seq jobs complete successfully. "
+        "For Ribo-seq only.",
         action="store_true",
-        required="--stranded" in sys.argv,
+        required="--rna-stranded" in sys.argv,
     )
-
     parser.add_argument(
-        "--stranded",
-        help="""Optional argument: library strandedness
-        for RNA-seq. This option is passed to htseq-count and overrides the same option
-        passed via [--htseq-options] and used for Ribo-seq. Unless given, the default
-        value will be used.""",
+        "--rna-stranded",
+        help="Library strandedness for RNA-seq, when [--run-all]. "
+        "This option is passed to 'htseq-count' and overrides the same "
+        "option passed via [--htseq-options] or the default value.",
         choices=["yes", "reverse", "no"],
         default="no",
     )
-
     parser.add_argument(
         "--trim-rna-to-max-fragment-size",
-        help="""Flag: trim RNA post
-        adapter removal using max fragment size from the matching Ribo-seq sample. Note* At least
-        the "periodic-offsets" file must be available. The config file must also include
-        "matching_samples" and the path to the Ribo-seq config must be given [--ribo-config])""",
+        help="Trim RNA post adapter removal using max fragment size "
+        'from matching Ribo-seq samples. Required: the "periodic-offsets" '
+        'files, the "matching_samples" key in the config, and the option '
+        "[--ribo-config]. If the [--post-trim-length] option is passed "
+        "via [--flexbar-options], it will override this option. "
+        "For RNA-seq only.",
         action="store_true",
     )
-
     parser.add_argument(
         "--ribo-config",
-        help="""Optional argument: the Ribo-seq config file
-        if using [--trim-rna-to-max-fragment-size].""",
+        help="The Ribo-seq config file if using [--trim-rna-to-max-fragment-size].",
         required="--trim-rna-to-max-fragment-size" in sys.argv,
         type=str,
     )
-
     parser.add_argument(
         "--rna-config",
-        help="""Optional argument: the RNA-seq config file
-            if using [--run-all].""",
+        help="The RNA-seq config file if using [--run-all].",
         required="--run-all" in sys.argv,
         type=str,
     )
-
     parser.add_argument(
         "--gtf",
-        help="""A different GTF file for abundance estimation, e.g. the output
-        of get-gtf-from-predictions (Ribo-seq ORFs). This is passed to
-        htseq-count and overrides the GTF file from the config.""",
+        help="A different GTF file for abundance estimation, e.g. the output "
+        " of 'get-gtf-from-predictions' (Ribo-seq ORFs). This is passed to "
+        " 'htseq-count' and overrides the GTF file from the config.",
         type=str,
         dest="htseq_gtf",
     )
-
     clu.add_file_options(parser)
     slurm.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     logging_utils.add_logging_options(parser)
     pgrm_utils.add_star_options(parser, star_executable)
     pgrm_utils.add_flexbar_options(parser)
     clu.add_htseq_options(parser)
+
+    return parser
+
+
+def main():
+    """Submit samples for abundance estimation."""
+    parser = get_parser()
     args = parser.parse_args()
     logging_utils.update_logging(args)
 
@@ -157,7 +157,7 @@ def main():
         htseq_gtf_str = "--gtf {}".format(args.htseq_gtf)
     tmp_str = ""
 
-    # handle do_not_call so that we do call the pipeline script, but that it does not run anything
+    # handle do_not_call
     call = not args.do_not_call
     do_not_call_str = ""
     if not call:
@@ -165,8 +165,20 @@ def main():
     args.do_not_call = False
 
     if args.seq.lower() == "rna" and (args.skip_periodicity_estimation or args.run_all):
-        msg = """seq is RNA and either [--skip-periodicity-estimation] or [--run-all]
-            were given. These options will be ignored."""
+        msg = """[seq=rna] and [--skip-periodicity-estimation] or [--run-all]
+        were given. These options will be ignored."""
+        logger.warning(msg)
+
+    if args.trim_rna_to_max_fragment_size and (
+        args.seq.lower() == "ribo" and not args.run_all
+    ):
+        msg = """[--trim_rna_to_max_fragment_size] is set, but [seq=ribo]
+        and [--run-all] is not set. This options will be ignored."""
+        logger.warning(msg)
+
+    if args.ribo_config and (args.seq.lower() == "ribo" and not args.run_all):
+        msg = """[--ribo-config] is passed, but [seq=ribo]
+        and [--run-all] is not set. This options will be ignored."""
         logger.warning(msg)
 
     if not args.run_all and args.rna_config:
@@ -180,12 +192,10 @@ def main():
         "star_index",
         "genome_base_path",
         "genome_name",
-        "fasta",
         "gtf",
     ]
 
     all_ribo_jobs = None
-
     # now process samples
     if args.seq.lower() == "ribo":
 
@@ -224,13 +234,15 @@ def main():
         if not args.skip_periodicity_estimation:
 
             not_periodic_str = ""
+            profile_str = "--create-orf-profiles" if args.create_orf_profiles else ""
             filter_non_periodic_str = "--filter-non-periodic"
 
             for sample_name in config["riboseq_samples"].keys():
 
-                cmd = "get-ribo-periodic {} {} {} {} {} {} {}".format(
+                cmd = "get-ribo-periodic {} {} {} {} {} {} {} {}".format(
                     args.config,
                     sample_name,
+                    profile_str,
                     filter_non_periodic_str,
                     do_not_call_str,
                     logging_str,
@@ -260,9 +272,11 @@ def main():
             )
 
             job_id = [
-                job_ids_periodic[sample_name]
-                if job_ids_periodic.get(sample_name, None)
-                else job_ids_mapping[sample_name]
+                (
+                    job_ids_periodic[sample_name]
+                    if job_ids_periodic.get(sample_name, None)
+                    else job_ids_mapping[sample_name]
+                )
             ]
             slurm.check_sbatch(cmd, args=args, dependencies=job_id)
 
@@ -276,14 +290,16 @@ def main():
             if args.htseq_options is not None:
                 # replace option used for ribo
                 args.htseq_options = [
-                    opt
-                    if "--stranded" not in opt
-                    else re.sub("yes|no|reverse", args.stranded, opt)
+                    (
+                        opt
+                        if "--stranded" not in opt
+                        else re.sub("yes|no|reverse", args.rna_stranded, opt)
+                    )
                     for opt in args.htseq_options
                 ]
             else:
-                # use default if no arguments are passed
-                args.htseq_options = ["--stranded {}".format(args.stranded)]
+                # replace default if no arguments are passed
+                args.htseq_options = ["--stranded {}".format(args.rna_stranded)]
 
             htseq_str = clu.get_htseq_options_string(args)
 

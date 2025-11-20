@@ -1,7 +1,9 @@
 #! /usr/bin/env python3
 
-"""Convert unique Rp-Bp ORF predictions to GTF"""
+"""Convert unique Rp-Bp ORF predictions to GTF."""
 
+import sys
+import shlex
 import csv
 import argparse
 import logging
@@ -13,6 +15,7 @@ import pbiotools.utils.gtf_utils as gtf_utils
 import pbiotools.utils.bed_utils as bed_utils
 import pbiotools.misc.parallel as parallel
 import pbiotools.misc.pandas_utils as pandas_utils
+import pbiotools.misc.slurm as slurm
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +29,6 @@ def _clean_attrs(attrs):
 
 
 def _get_gtf_entries(bed_entry, source: str, id_attribute: str = "transcript_id"):
-    """Same as gtf_utils,, but pass the id_attribute!"""
-
     gtf_exons = gtf_utils._get_gtf_entries(bed_entry, "exon", source, id_attribute)
 
     if bed_entry["thick_start"] > -1:
@@ -41,39 +42,45 @@ def _get_gtf_entries(bed_entry, source: str, id_attribute: str = "transcript_id"
     return gtf_exons[gtf_utils.gtf_field_names]
 
 
-def main():
+def get_parser():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="""Convert Rp-Bp ORF predictions (BED12+) into GTF. The
-        "thick_start" and "thick_end" fields are used to determine the CDS
-        GTF entries. Only creates "exon" and "CDS" entries. Additional
-        columns are included as attributes.""",
+        description="Convert Rp-Bp ORF predictions (BED12+) into GTF. The "
+        '"thick_start" and "thick_end" fields are used to determine the CDS '
+        'GTF entries. Only creates "exon" and "CDS" entries. Additional '
+        "columns are included as attributes.",
     )
-
     parser.add_argument(
         "bed",
         help="The bed12 file. It must conform to the "
         "style expected by utils.bed_utils.",
     )
     parser.add_argument(
-        "out",
+        "gtf",
         help="The (output) gtf file.",
     )
-
-    parser.add_argument(
-        "-p",
-        "--num-cpus",
-        help="The number of CPUs to use",
-        type=int,
-        default=1,
-    )
-
     logging_utils.add_logging_options(parser)
+    slurm.add_sbatch_options(parser, num_cpus=1, mem="2G")
+
+    return parser
+
+
+def main():
+    """Convert Ribo-seq ORFs from BED12+ to GTF."""
+    parser = get_parser()
     args = parser.parse_args()
     logging_utils.update_logging(args)
 
-    msg = "Reading bed file"
+    msg = "[get-gtf-from-predictions]: {}".format(" ".join(sys.argv))
     logger.info(msg)
+
+    # if using slurm, submit the script
+    if args.use_slurm:
+        cmd = "{}".format(" ".join(shlex.quote(s) for s in sys.argv))
+        slurm.check_sbatch(cmd, args=args)
+        return
+
+    logger.info("Reading bed file")
     bed = bed_utils.read_bed(args.bed)
 
     # rename/wrangle attributes
@@ -86,7 +93,7 @@ def main():
         bed["orf_id"] = bed["id"]
         id_attribute = None
         source = "Rp-Bp"
-    except:
+    except KeyError:
         msg = (
             f"Input BED file {args.bed} has unexpected or missing fields! "
             f"Additional required fields are {ATTRS}. Truncating to BED12..."
@@ -138,7 +145,7 @@ def main():
 
     pandas_utils.write_df(
         gtf_entries,
-        args.out,
+        args.gtf,
         index=False,
         sep="\t",
         header=None,
