@@ -11,6 +11,7 @@
 <p align="center">
 <a href="http://bioconda.github.io/recipes/ribotools/README.html"><img alt="Install with bioconda" src="https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat"></a>
 <a href="https://pypi.org/project/ribotools/"><img alt="PyPI" src="https://img.shields.io/pypi/v/ribotools"></a>
+<a href="https://github.com/eboileau/ribotools/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/eboileau/ribotools/actions/workflows/ci.yml/badge.svg"></a>
 <a href='https://ribotools.readthedocs.io/en/latest/?badge=latest'>
     <img src='https://readthedocs.org/projects/ribotools/badge/?version=latest' alt='Documentation Status' />
 </a>

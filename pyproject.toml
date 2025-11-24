@@ -32,7 +32,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 requires-python = ">=3.11,<3.14"
-dependencies = ["rpbp>=4.0.0", "htseq"]
+dependencies = ["rpbp>=4.0.1", "htseq"]
 
 [project.scripts]
 # programs
