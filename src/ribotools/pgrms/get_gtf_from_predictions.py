@@ -126,7 +126,7 @@ def main():
     logger.info(msg)
 
     gtf_entries = pd.concat(gtf_entries)
-    gtf_entries["attributes"] = gtf_entries["attributes"].apply(_clean_attrs, 1)
+    gtf_entries["attributes"] = gtf_entries["attributes"].apply(_clean_attrs)
 
     msg = "Sorting GTF entries"
     logger.info(msg)
