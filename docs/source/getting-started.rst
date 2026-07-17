@@ -6,7 +6,7 @@ What is **Ribotools**?
 
 **Ribotools** is a toolbox for the analysis of matched ribosome profiling (Ribo-seq) and RNA sequencing (RNA-seq) data. It can be used to generate count tables for Ribo-seq, RNA-seq, or both, and perform translation efficiency (TE) or differential expression (DE) analyses.
 
-Ribo-seq abundance is estimated from ribosome footprints, or ribosome-protected RNA fragments (RPFs), using periodic reads only. Optionally, RNA-seq reads can be trimmed to the maximum periodic fragment length of a matched Ribo-seq sample, to minimize mapping bias.
+Ribo-seq abundance is estimated from ribosome footprints, or ribosome-protected RNA fragments (RPFs), using periodic reads only. Optionally, matched RNA-seq reads are trimmed to the maximum periodic fragment length their corresponding Ribo-seq sample before abundance estimation, to minimize mapping bias.
 
 To get started, you need
 

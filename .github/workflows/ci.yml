@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v5
       - name: Create ribotools conda environment
@@ -41,8 +41,8 @@ jobs:
           conda config --show
           printenv | sort
       - name: Install test requirements
-        run: pip install pytest pytest-cov pytest-depends
+        run: conda run -n ribotools -- python -m pip install "pytest==8.4.2" "pytest-cov==7.1.0" "pytest-depends==1.0.1"
       - name: Install ribotools with --no-deps option
-        run: pip install . --no-deps --verbose
+        run: conda run -n ribotools -- python -m pip install . --no-deps --verbose
       - name: Run tests
-        run: python -m pytest . --cov=rpbp --cov-report=xml -s -v
+        run: conda run -n ribotools -- python -m pytest . --cov=rpbp --cov-report=xml -s -v

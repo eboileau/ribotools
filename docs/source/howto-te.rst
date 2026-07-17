@@ -3,9 +3,33 @@
 How to estimate TE
 ==================
 
-Approaches to estimate TE range from a simple ratio calculation, ignoring variance, low expression of RPFs, batch effects, *etc.* to more complex methodologies such as `Ribodiff <https://academic.oup.com/bioinformatics/article/33/1/139/2525694?login=true>`_, `Xtail <https://www.nature.com/articles/ncomms11194>`_, `Riborex <https://academic.oup.com/bioinformatics/article/33/11/1735/2964727?login=true>`_, or `Anota2Seq <https://academic.oup.com/nar/article/47/12/e70/5423604?login=true>`_, to name but a few. **Ribotools** uses a simple, but flexible approach that builds on the well-established differential expression software `DEseq2 <https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8>`_, allowing to take into account sample-to-sample variance and/or covariates such as batch effect. With this approach, TE can be estimated in a few minutes, even for large datasets.
+Changes in TE are inferred by jointly modeling RNA- and Ribo-seq counts using a negative-binomial GLM and testing the interaction term with `DEseq2 <https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8>`_. This allows to quantify the translational response between conditions while accounting for count-level uncertainty, overdispersion, and library-size normalization. With this approach, TE can be estimated in a few minutes, even for large datasets.
 
-**Ribotools** automatically classifies features into four broad classes, according to the terminology defined in the `deltaTE protocol <https://currentprotocols.onlinelibrary.wiley.com/doi/full/10.1002/cpmb.108>`_. Translationally *forwarded* features have a significant change in RNA and RPF at the same rate, with no significant change in TE. It is assumed that changes in RNA abundance drive changes in RPFs. *Exclusive* features are differentially translated features that have a significant change in RPF, with no change in RNA, *i.e.* changes in TE are driven by changes in RPFs exclusively. These are classified based on significance only, although for the Wald tests, we set a threshold based on log fold change. *Intensified* and *buffered* features take into account the direction of fold change. Translationally *intensified* features have a significant change in TE that acts with the effect of transcription. Translationally *buffered* features have a significant change in TE that counteracts the change in RNA (buffering transcription).
+Ribotools automatically classifies features into four regulatory layers, according to the terminology defined in the `deltaTE protocol <https://currentprotocols.onlinelibrary.wiley.com/doi/full/10.1002/cpmb.108>`_. Translationally *forwarded* features have a significant change in RNA and RPF at the same rate, without a change in TE. *Exclusive* features are differentially translated features driven by a condition effect that is significant for RPF. *Intensified* and *buffered* features take into account the direction of fold change. Translationally *intensified* features have a significant change in TE that acts with the effect of transcription. Translationally *buffered* features have a significant change in TE, but not in RPF, that counteracts the change in RNA (TE compensates) or are under active counter-regulation (all three significant).
+
+
+.. list-table:: Classification of regulatory layers.
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Regulatory layer
+     - Definition
+   * - Forwarded
+     - ``padj.dte > α``, ``padj.ribo < α``, ``padj.rna < α``
+   * - Exclusive
+     - ``padj.dte < α``, ``padj.ribo < α``, ``padj.rna > α``
+   * - Intensified
+     - ``padj.dte < α``, ``padj.ribo < α``, ``padj.rna < α``,
+       ``log2FC.dte × log2FC.rna > 0``
+       (i.e. ``sign(ΔTE) = sign(log2FC.rna)``)
+   * - Buffered
+     - Either ``padj.dte < α``, ``padj.ribo > α``,
+       ``padj.rna < α``, or
+       ``padj.dte < α``, ``padj.ribo < α``,
+       ``padj.rna < α``,
+       ``log2FC.dte × log2FC.rna < 0``
+       (i.e. ``sign(ΔTE) ≠ sign(log2FC.rna)``)
+
 
 .. _prep_tables_te:
 
@@ -148,13 +172,13 @@ Output files are written to *<tea_data>/<method>/<contrasts>*, where ``tea_data`
 More about the model
 ^^^^^^^^^^^^^^^^^^^^
 
-Two approaches are implemented that provide similar output. The default method is an *LRT* test where a full model ``~assay+condition+assay:condition`` is tested against a reduced model ``~assay+condition``, ignoring the contrasts for the p-value calculation, *i.e* the p-value is for the difference between the full and reduced model, and not the fold change. This essentially tests for the interaction term, or the condition effect across assays, *e.g.*
+Two approaches are implemented: a likelihood ratio test (*LRT*) and the *deltaTE* method. The default method is a two step procedure with a LRT test for the global model fit and Wald tests with fold change threshold for extracting directional contrasts. The LRT tests a full model ``~assay+condition+assay:condition`` against a reduced model ``~assay+condition``. Its p-value is the significance of the interaction, and is not related to an absolute RPF fold change. This is the differential translation :math:`\Delta TE`, or the condition effect across assays
 
 .. math::
 
    \frac{\left(RPF/RNA\right)_{treatment}}{\left(RPF/RNA\right)_{control}} = \frac{\left(RPF_{treatment}/RPF_{control}\right)}{\left(RNA_{treatment}/RNA_{control}\right)}
 
-Independently of the classification of features into *forwarded*, *exclusive*, *intensified* and *buffered*, you may be interested in features with a significant *padj.dte*. Standard *Wald* tests are used to test for the main effect of condition on RNA and RPF (with log fold change threshold).
+Independently of the classification of features into *forwarded*, *exclusive*, *intensified* and *buffered*, you may be interested in features with a significant :math:`\Delta TE` or *padj.dte*. For RNA- or Ribo-seq specific fold changes, and for visual representation, results from the standard Wald tests are used. These tests are for the main effect of condition on RNA and RPF (with log fold change threshold).
 
 We also re-implemented the `deltaTE method <https://currentprotocols.onlinelibrary.wiley.com/doi/full/10.1002/cpmb.108>`_, which only uses *Wald* tests, testing for the interaction term using a full model, and re-fitting the data separately to test for RPF and RNA with a *reduced* model of the form ``~condition``.
 

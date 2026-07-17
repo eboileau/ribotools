@@ -38,6 +38,6 @@ where ``gtf`` is the reference GTF annotation (must match the value from the con
 
 .. tip::
 
-    Use **Rp-Bp** to prepare all annotations and indices at once. Use the same configuration file with the necessary keys to
+    It's much easier to use **Rp-Bp** to prepare all annotations and indices at once. Use the same configuration file with the necessary keys to
     run ``prepare-rpbp-genome``. See `How to prepare annotations <https://rp-bp.readthedocs.io/en/latest/howto-annotation.html>`_ for
-    more information. This is a must if you want to QC your Ribo-seq data, see :ref:`ribotools_qc`.
+    more information. *This is a must if you want to QC your Ribo-seq data*, see :ref:`ribotools_qc`.
